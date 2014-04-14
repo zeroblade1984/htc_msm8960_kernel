@@ -1,0 +1,72 @@
+config MACH_M7_UL
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_UL"
+        help
+          Support for the HTC APQ8064 M7_UL.
+
+config MACH_M7_U
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_U"
+        help
+          Support for the HTC APQ8064 M7_U.
+
+config MACH_M7_WLS
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_WLS"
+        help
+          Support for the HTC APQ8064 M7_WLS.
+
+config MACH_M7_WLV
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_WLV"
+        help
+          Support for the HTC APQ8064 M7_WLV.
+
+config MACH_M7_WLJ
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_WLJ"
+        help
+          Support for the HTC APQ8064 M7_WLJ.
+
+config MACH_M7_DCG
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_DCG"
+        help
+          Support for the HTC APQ8064 M7_DCG.
+
+config MACH_M7_DUG
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_DUG"
+        help
+          Support for the HTC APQ8064 M7_DUG.
+
+config MACH_M7_DTU
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_DTU"
+        help
+          Support for the HTC APQ8064 M7_DTU.
+
+config MACH_M7C_DTU
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7C_DTU"
+        help
+          Support for the HTC APQ8064 M7C_DTU.
+
+config MACH_M7C_DUG
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7C_DUG"
+        help
+          Support for the HTC APQ8064 M7C_DUG.
+
+config MACH_M7C_DWG
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7C_DWG"
+        help
+          Support for the HTC APQ8064 M7C_DWG.
+
+config MACH_M7_EVM
+        depends on ARCH_APQ8064
+        bool "APQ8064 M7_EVM"
+        help
+          Support for the HTC APQ8064 M7_EVM.
+
