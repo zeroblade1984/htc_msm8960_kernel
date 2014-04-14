@@ -1099,6 +1099,8 @@ config MACH_FSM9XXX_SURF
 
 endmenu
 
+source "arch/arm/mach-msm/boards/Kconfig"
+
 config MSM_STACKED_MEMORY
 	bool "Stacked Memory"
 	default y

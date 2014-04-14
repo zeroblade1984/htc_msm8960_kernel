@@ -1,0 +1,19 @@
+#
+# Include the specific Kconfig file for HTC board
+#
+
+# DLXP_UL
+source "arch/arm/mach-msm/boards/board-dlxpul/Kconfig"
+
+# DLXU
+source "arch/arm/mach-msm/boards/board-dlxu/Kconfig"
+
+# DLXUB1
+source "arch/arm/mach-msm/boards/board-dlxub1/Kconfig"
+
+# ZARA
+source "arch/arm/mach-msm/boards/board-zara/Kconfig"
+
+# M7
+source "arch/arm/mach-msm/boards/board-m7/Kconfig"
+
