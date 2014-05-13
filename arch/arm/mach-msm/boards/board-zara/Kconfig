@@ -1,5 +1,0 @@
-config MACH_ZARA
-	depends on ARCH_MSM8930
-	bool "ZARA"
-	help
-	  Support for the HTC ZARA

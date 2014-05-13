@@ -1,4 +1,4 @@
-/* linux/arch/arm/mach-msm/board-ZARA-wifi.h
+/* linux/arch/arm/mach-msm/board-monarudo-wifi.h
  *
  * Copyright (C) 2008 HTC Corporation.
  *

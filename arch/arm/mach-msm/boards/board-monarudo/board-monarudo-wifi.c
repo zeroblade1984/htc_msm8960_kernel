@@ -8,16 +8,15 @@
 #include <asm/io.h>
 #include <linux/skbuff.h>
 #include <linux/wifi_tiwlan.h>
-#include <mach/msm_bus.h>
 #include <mach/msm_bus_board.h>
 
-#include "board-zara.h"
-#include "board-zara-wifi.h"
+#include "board-monarudo.h"
+#include "board-monarudo-wifi.h"
 
-int zara_wifi_power(int on);
-int zara_wifi_reset(int on);
-int zara_wifi_set_carddetect(int on);
-int zara_wifi_get_mac_addr(unsigned char *buf);
+int monarudo_wifi_power(int on);
+int monarudo_wifi_reset(int on);
+int monarudo_wifi_set_carddetect(int on);
+int monarudo_wifi_get_mac_addr(unsigned char *buf);
 
 #define PREALLOC_WLAN_NUMBER_OF_SECTIONS	4
 #define PREALLOC_WLAN_NUMBER_OF_BUFFERS		160
@@ -46,7 +45,7 @@ static wifi_mem_prealloc_t wifi_mem_array[PREALLOC_WLAN_NUMBER_OF_SECTIONS] = {
 	{ NULL, (WLAN_SECTION_SIZE_3 + PREALLOC_WLAN_SECTION_HEADER) }
 };
 
-static void *zara_wifi_mem_prealloc(int section, unsigned long size)
+static void *monarudo_wifi_mem_prealloc(int section, unsigned long size)
 {
 	if (section == PREALLOC_WLAN_NUMBER_OF_SECTIONS)
 		return wlan_static_skb;
@@ -57,15 +56,15 @@ static void *zara_wifi_mem_prealloc(int section, unsigned long size)
 	return wifi_mem_array[section].mem_ptr;
 }
 
-int __init zara_init_wifi_mem(void)
+int __init monarudo_init_wifi_mem(void)
 {
 	int i;
 
 	for (i = 0; (i < WLAN_SKB_BUF_NUM); i++) {
 		if (i < (WLAN_SKB_BUF_NUM/2))
-			wlan_static_skb[i] = dev_alloc_skb(4096);
+			wlan_static_skb[i] = dev_alloc_skb(PAGE_SIZE*2);
 		else
-			wlan_static_skb[i] = dev_alloc_skb(8192);
+			wlan_static_skb[i] = dev_alloc_skb(PAGE_SIZE*4);
 	}
 	for (i = 0; (i < PREALLOC_WLAN_NUMBER_OF_SECTIONS); i++) {
 		wifi_mem_array[i].mem_ptr = kmalloc(wifi_mem_array[i].size,
@@ -76,11 +75,11 @@ int __init zara_init_wifi_mem(void)
 	return 0;
 }
 
-static struct resource zara_wifi_resources[] = {
+static struct resource monarudo_wifi_resources[] = {
 	[0] = {
 		.name		= "bcmdhd_wlan_irq",
-		.start		= MSM_GPIO_TO_INT(MSM_WL_HOST_WAKE),
-		.end		= MSM_GPIO_TO_INT(MSM_WL_HOST_WAKE),
+		.start		= PM8921_GPIO_IRQ(PM8921_IRQ_BASE, WL_HOST_WAKE_XC),
+		.end		= PM8921_GPIO_IRQ(PM8921_IRQ_BASE, WL_HOST_WAKE_XC),
 #ifdef HW_OOB
 		.flags          = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL | IORESOURCE_IRQ_SHAREABLE,
 #else
@@ -89,63 +88,61 @@ static struct resource zara_wifi_resources[] = {
 	},
 };
 
-#ifdef CONFIG_MSM_BUS_SCALING
 static struct msm_bus_vectors wlan_init_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_SPS,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 0,
-		.ib = 0,
-	},
+       {
+               .src = MSM_BUS_MASTER_SPS,
+               .dst = MSM_BUS_SLAVE_EBI_CH0,
+               .ab = 0,
+               .ib = 0,
+       },
 };
 
 static struct msm_bus_vectors wlan_max_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_SPS,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 60000000,		
-		.ib = 960000000,	
-	},
+       {
+               .src = MSM_BUS_MASTER_SPS,
+               .dst = MSM_BUS_SLAVE_EBI_CH0,
+               .ab = 60000000,         
+               .ib = 960000000,        
+       },
 };
 
 static struct msm_bus_paths wlan_bus_scale_usecases[] = {
-	{
-		ARRAY_SIZE(wlan_init_vectors),
-		wlan_init_vectors,
-	},
-	{
-		ARRAY_SIZE(wlan_max_vectors),
-		wlan_max_vectors,
-	},
+       {
+               ARRAY_SIZE(wlan_init_vectors),
+               wlan_init_vectors,
+       },
+       {
+               ARRAY_SIZE(wlan_max_vectors),
+               wlan_max_vectors,
+       },
 };
 
 static struct msm_bus_scale_pdata wlan_bus_scale_pdata = {
-	wlan_bus_scale_usecases,
-	ARRAY_SIZE(wlan_bus_scale_usecases),
-	.name = "wlan",
-};
-#endif
-
-static struct wifi_platform_data zara_wifi_control = {
-	.set_power      = zara_wifi_power,
-	.set_reset      = zara_wifi_reset,
-	.set_carddetect = zara_wifi_set_carddetect,
-	.mem_prealloc   = zara_wifi_mem_prealloc,
-	.get_mac_addr	= zara_wifi_get_mac_addr,
-	.bus_scale_table    = &wlan_bus_scale_pdata,
+       wlan_bus_scale_usecases,
+       ARRAY_SIZE(wlan_bus_scale_usecases),
+       .name = "wlan",
 };
 
-static struct platform_device zara_wifi_device = {
+static struct wifi_platform_data monarudo_wifi_control = {
+	.set_power      = monarudo_wifi_power,
+	.set_reset      = monarudo_wifi_reset,
+	.set_carddetect = monarudo_wifi_set_carddetect,
+	.mem_prealloc   = monarudo_wifi_mem_prealloc,
+	.get_mac_addr	= monarudo_wifi_get_mac_addr,
+	.bus_scale_table        = &wlan_bus_scale_pdata,
+};
+
+static struct platform_device monarudo_wifi_device = {
 	.name           = "bcmdhd_wlan",
 	.id             = 1,
-	.num_resources  = ARRAY_SIZE(zara_wifi_resources),
-	.resource       = zara_wifi_resources,
+	.num_resources  = ARRAY_SIZE(monarudo_wifi_resources),
+	.resource       = monarudo_wifi_resources,
 	.dev            = {
-		.platform_data = &zara_wifi_control,
+		.platform_data = &monarudo_wifi_control,
 	},
 };
 
-static unsigned zara_wifi_update_nvs(char *str)
+static unsigned monarudo_wifi_update_nvs(char *str)
 {
 #define NVS_LEN_OFFSET		0x0C
 #define NVS_DATA_OFFSET		0x40
@@ -267,7 +264,7 @@ get_mac_from_wifi_nvs_ram(char *buf, unsigned int buf_len)
 }
 
 #define ETHER_ADDR_LEN 6
-int zara_wifi_get_mac_addr(unsigned char *buf)
+int monarudo_wifi_get_mac_addr(unsigned char *buf)
 {
 	static u8 ether_mac_addr[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0xFF};
 	char mac[WIFI_MAX_MAC_LEN];
@@ -289,13 +286,13 @@ int zara_wifi_get_mac_addr(unsigned char *buf)
 
 	memcpy(buf, ether_mac_addr, sizeof(ether_mac_addr));
 
-	printk(KERN_INFO"zara_wifi_get_mac_addr = %02x %02x %02x %02x %02x %02x \n",
+	printk(KERN_INFO"monarudo_wifi_get_mac_addr = %02x %02x %02x %02x %02x %02x \n",
 		ether_mac_addr[0], ether_mac_addr[1], ether_mac_addr[2], ether_mac_addr[3], ether_mac_addr[4], ether_mac_addr[5]);
 
 	return 0;
 }
 
-int __init zara_wifi_init(void)
+int __init monarudo_wifi_init(void)
 {
 	int ret;
 
@@ -303,12 +300,12 @@ int __init zara_wifi_init(void)
 #ifdef HW_OOB
 	strip_nvs_param("sd_oobonly");
 #else
-	zara_wifi_update_nvs("sd_oobonly=1\n");
+	monarudo_wifi_update_nvs("sd_oobonly=1\n");
 #endif
-	zara_wifi_update_nvs("btc_params80=0\n");
-	zara_wifi_update_nvs("btc_params6=30\n");
-	zara_init_wifi_mem();
-	ret = platform_device_register(&zara_wifi_device);
+	monarudo_wifi_update_nvs("btc_params80=0\n");
+	monarudo_wifi_update_nvs("btc_params6=30\n");
+	monarudo_init_wifi_mem();
+	ret = platform_device_register(&monarudo_wifi_device);
 	return ret;
 }
 
