@@ -74,7 +74,8 @@ else ifdef CONFIG_ARCH_APQ8064_DLXP
 snd-soc-msm8960-objs := apq8064_DLXP.o mpq8064.o
 else ifdef CONFIG_ARCH_APQ8064_DLPDXG
 snd-soc-msm8960-objs := apq8064_DLPDXG.o mpq8064.o
-else ifdef CONFIG_ARCH_DUMMY
+else ifdef CONFIG_ARCH_APQ8064_T6DXG
+snd-soc-msm8960-objs := apq8064_T6DXG.o mpq8064.o
 else
 snd-soc-msm8960-objs := apq8064.o mpq8064.o
 endif
