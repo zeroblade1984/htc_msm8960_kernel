@@ -12,7 +12,7 @@ obj-$(MACH_DELUXE_U) += board-dlxu/
 obj-$(MACH_DELUXE_UB1) += board-dlxub1/
 
 # ZARA
-obj-$(MACH_ZARA) += board-zara/
+obj-$(MACH_MONARUDO) += board-monarudo/
 
 # M7
 obj-$(CONFIG_MACH_M7_UL) += board-m7/

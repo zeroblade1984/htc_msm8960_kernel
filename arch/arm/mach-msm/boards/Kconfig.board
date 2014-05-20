@@ -12,7 +12,7 @@ source "arch/arm/mach-msm/boards/board-dlxu/Kconfig"
 source "arch/arm/mach-msm/boards/board-dlxub1/Kconfig"
 
 # ZARA
-source "arch/arm/mach-msm/boards/board-zara/Kconfig"
+source "arch/arm/mach-msm/boards/board-monarudo/Kconfig"
 
 # M7
 source "arch/arm/mach-msm/boards/board-m7/Kconfig"
