@@ -388,12 +388,13 @@ setup_return(struct pt_regs *regs, struct k_sigaction *ka,
 	if (elf_hwcap & HWCAP_THUMB) {
 		thumb = handler & 1;
 
-		if (thumb) {
-			cpsr |= PSR_T_BIT;
 #if __LINUX_ARM_ARCH__ >= 7
 			
-			cpsr &= ~PSR_IT_MASK;
+		cpsr &= ~PSR_IT_MASK;
 #endif
+
+		if (thumb) {
+			cpsr |= PSR_T_BIT;
 		} else
 			cpsr &= ~PSR_T_BIT;
 	}

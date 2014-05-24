@@ -89,8 +89,6 @@ int wldev_get_band(struct net_device *dev, uint *pband);
 
 int wldev_set_band(struct net_device *dev, uint band);
 
-int wldev_miracast_tuning(struct net_device *dev, int mode);
-
 #ifdef CUSTOMER_HW_ONE
 #define DEF_COUNTRY_CODE	"XX"
 typedef struct {

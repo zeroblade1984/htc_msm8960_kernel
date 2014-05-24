@@ -865,10 +865,13 @@ static const char * const pm8917_rev_names[] = {
 	[PM8XXX_REVISION_8917_1p0]	= "1.0",
 };
 
+#ifdef CONFIG_MSM_SHOW_RESUME_IRQ
 extern int msm_show_resume_irq_mask;
+#endif
 
 static void pm8921_show_resume_irq(void)
 {
+#ifdef CONFIG_MSM_SHOW_RESUME_IRQ
 	int i, irq;
 	struct pm_irq_chip *chip = pmic8921_chip->irq_chip;
 
@@ -886,6 +889,7 @@ static void pm8921_show_resume_irq(void)
 			}
 		}
 	}
+#endif
 }
 
 static int pm8921_suspend(void)

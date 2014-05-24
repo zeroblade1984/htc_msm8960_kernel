@@ -760,7 +760,7 @@ static int __devinit pm8xxx_led_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 	wake_lock_init(&pmic_led_wake_lock, WAKE_LOCK_SUSPEND, "pmic_led");
-	g_led_work_queue = create_workqueue("pm8xxx-led");
+	g_led_work_queue = create_singlethread_workqueue("pm8xxx-led");
 	if (g_led_work_queue == NULL) {
 		LED_ERR("failed to create workqueue\n");
 		goto err_create_work_queue;

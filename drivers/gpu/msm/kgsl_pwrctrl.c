@@ -34,8 +34,6 @@
 #define UPDATE_BUSY_VAL		1000000
 #define UPDATE_BUSY		50
 
-extern void set_gpu_clk(unsigned int);
-
 struct clk_pair {
 	const char *name;
 	uint map;
@@ -73,6 +71,20 @@ struct clk_pair clks[KGSL_MAX_CLKS] = {
 		.map = KGSL_CLK_MEM_IFACE,
 	},
 };
+
+#ifdef CONFIG_HTC_PNPMGR
+extern void set_gpu_clk(unsigned int);
+#else
+#ifdef CONFIG_GPU_OVERCLOCK
+static unsigned int info_gpu_max_clk = 450000000;
+#else
+static unsigned int info_gpu_max_clk = 400000000;
+#endif
+void set_gpu_clk(unsigned int value)
+{
+        info_gpu_max_clk = value;
+}
+#endif
 
 static int gpufreq_stats_update(unsigned int update_time_only, unsigned int last_index, unsigned int cur_index)
 {

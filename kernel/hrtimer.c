@@ -45,6 +45,7 @@
 #include <linux/debugobjects.h>
 #include <linux/sched.h>
 #include <linux/timer.h>
+#include <linux/freezer.h>
 
 #include <asm/uaccess.h>
 
@@ -173,10 +174,13 @@ again:
 		raw_spin_unlock(&base->cpu_base->lock);
 		raw_spin_lock(&new_base->cpu_base->lock);
 
-		if (cpu != this_cpu && hrtimer_check_target(timer, new_base)) {
-			cpu = this_cpu;
+		this_cpu = smp_processor_id();
+
+		if (cpu != this_cpu && (hrtimer_check_target(timer, new_base)
+		  || !cpu_online(cpu))) {
 			raw_spin_unlock(&new_base->cpu_base->lock);
 			raw_spin_lock(&base->cpu_base->lock);
+			cpu = smp_processor_id();
 			timer->base = base;
 			goto again;
 		}
@@ -486,21 +490,9 @@ static inline void hrtimer_init_hres(struct hrtimer_cpu_base *base)
 }
 
 static inline int hrtimer_enqueue_reprogram(struct hrtimer *timer,
-					    struct hrtimer_clock_base *base,
-					    int wakeup)
+					    struct hrtimer_clock_base *base)
 {
-	if (base->cpu_base->hres_active && hrtimer_reprogram(timer, base)) {
-		if (wakeup) {
-			raw_spin_unlock(&base->cpu_base->lock);
-			raise_softirq_irqoff(HRTIMER_SOFTIRQ);
-			raw_spin_lock(&base->cpu_base->lock);
-		} else
-			__raise_softirq_irqoff(HRTIMER_SOFTIRQ);
-
-		return 1;
-	}
-
-	return 0;
+	return base->cpu_base->hres_active && hrtimer_reprogram(timer, base);
 }
 
 static inline ktime_t hrtimer_update_base(struct hrtimer_cpu_base *base)
@@ -568,8 +560,7 @@ static inline int hrtimer_switch_to_hres(void) { return 0; }
 static inline void
 hrtimer_force_reprogram(struct hrtimer_cpu_base *base, int skip_equal) { }
 static inline int hrtimer_enqueue_reprogram(struct hrtimer *timer,
-					    struct hrtimer_clock_base *base,
-					    int wakeup)
+					    struct hrtimer_clock_base *base)
 {
 	return 0;
 }
@@ -746,8 +737,17 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 
 	leftmost = enqueue_hrtimer(timer, new_base);
 
-	if (leftmost && new_base->cpu_base == &__get_cpu_var(hrtimer_bases))
-		hrtimer_enqueue_reprogram(timer, new_base, wakeup);
+	if (leftmost && new_base->cpu_base == &__get_cpu_var(hrtimer_bases)
+    	        && hrtimer_enqueue_reprogram(timer, new_base)) {
+    		if (wakeup) {
+      			raw_spin_unlock(&new_base->cpu_base->lock);
+      			raise_softirq_irqoff(HRTIMER_SOFTIRQ);
+      			local_irq_restore(flags);
+      			return ret;
+    		} else {
+      			__raise_softirq_irqoff(HRTIMER_SOFTIRQ);
+    		}
+  	}
 
 	unlock_hrtimer_base(timer, &flags);
 
@@ -1116,7 +1116,7 @@ static int __sched do_nanosleep(struct hrtimer_sleeper *t, enum hrtimer_mode mod
 			t->task = NULL;
 
 		if (likely(t->task))
-			schedule();
+			freezable_schedule();
 
 		hrtimer_cancel(&t->timer);
 		mode = HRTIMER_MODE_ABS;
@@ -1231,14 +1231,11 @@ static void __cpuinit init_hrtimers_cpu(int cpu)
 	struct hrtimer_cpu_base *cpu_base = &per_cpu(hrtimer_bases, cpu);
 	static char __cpuinitdata cpu_base_done[NR_CPUS];
 	int i;
-	unsigned long flags;
 
 	if (!cpu_base_done[cpu]) {
 		raw_spin_lock_init(&cpu_base->lock);
 		cpu_base_done[cpu] = 1;
 	}
-
-	raw_spin_lock_irqsave(&cpu_base->lock, flags);
 
 	for (i = 0; i < HRTIMER_MAX_CLOCK_BASES; i++) {
 		cpu_base->clock_base[i].cpu_base = cpu_base;
@@ -1247,7 +1244,6 @@ static void __cpuinit init_hrtimers_cpu(int cpu)
 
 	hrtimer_init_hres(cpu_base);
 
-	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
 }
 
 #ifdef CONFIG_HOTPLUG_CPU

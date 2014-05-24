@@ -125,8 +125,8 @@ struct mem_cgroup_zone {
 #else
 #define prefetchw_prev_lru_page(_page, _base, _field) do { } while (0)
 #endif
-
-int vm_swappiness = 60;
+// kairi
+int vm_swappiness = 10;
 long vm_total_pages;	
 
 static LIST_HEAD(shrinker_list);
@@ -1907,6 +1907,8 @@ static bool sleeping_prematurely(pg_data_t *pgdat, int order, long remaining,
 	unsigned long balanced = 0;
 	bool all_zones_ok = true;
 
+	if (need_resched())
+		return false;
 	
 	if (remaining)
 		return true;
@@ -2080,11 +2082,11 @@ loop_again:
 		}
 		if (all_zones_ok || (order && pgdat_balanced(pgdat, balanced, *classzone_idx)))
 			break;		
-		if (total_scanned && (priority < DEF_PRIORITY - 2)) {
+		if (total_scanned && (priority < DEF_PRIORITY - 8)) {
 			if (has_under_min_watermark_zone)
 				count_vm_event(KSWAPD_SKIP_CONGESTION_WAIT);
 			else
-				congestion_wait(BLK_RW_ASYNC, HZ/10);
+				congestion_wait(BLK_RW_ASYNC, HZ/60);
 		}
 
 		if (sc.nr_reclaimed >= SWAP_CLUSTER_MAX)

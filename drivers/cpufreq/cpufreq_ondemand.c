@@ -31,7 +31,7 @@
 #include <trace/events/cpufreq_interactive.h>
 
 
-#define DEF_SAMPLING_RATE				(50000)
+#define DEF_SAMPLING_RATE			(50000)
 #define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(10)
 #define DEF_FREQUENCY_UP_THRESHOLD		(80)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
@@ -47,7 +47,7 @@
 #define DBS_UI_SAMPLING_MIN_TIMEOUT		(30)
 #define DBS_UI_SAMPLING_MAX_TIMEOUT		(1000)
 #define DBS_UI_SAMPLING_TIMEOUT			(80)
-#define DBS_SWITCH_MODE_TIMEOUT		(1000)
+#define DBS_SWITCH_MODE_TIMEOUT			(1000)
 
 #define MIN_SAMPLING_RATE_RATIO			(2)
 
@@ -55,7 +55,7 @@ static unsigned int min_sampling_rate;
 static unsigned int skip_ondemand = 0;
 
 #define LATENCY_MULTIPLIER			(1000)
-#define MIN_LATENCY_MULTIPLIER			(100)
+#define MIN_LATENCY_MULTIPLIER			(50)
 #define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
 
 #define POWERSAVE_BIAS_MAXLEVEL			(1000)

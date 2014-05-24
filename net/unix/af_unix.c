@@ -114,6 +114,7 @@
 #include <linux/mount.h>
 #include <net/checksum.h>
 #include <linux/security.h>
+#include <linux/freezer.h>
 
 struct hlist_head unix_socket_table[UNIX_HASH_SIZE + 1];
 EXPORT_SYMBOL_GPL(unix_socket_table);
@@ -983,7 +984,7 @@ static long unix_wait_for_peer(struct sock *other, long timeo)
 	unix_state_unlock(other);
 
 	if (sched)
-		timeo = schedule_timeout(timeo);
+		timeo = freezable_schedule_timeout(timeo);
 
 	finish_wait(&u->peer_wait, &wait);
 	return timeo;

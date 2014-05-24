@@ -1156,7 +1156,7 @@ static int read_soc_params_raw(struct pm8921_bms_chip *chip,
 		} else {
 			ocv_updated_flag &= OCV_UPDATE_STORAGE_USE_MASK;
 		}
-		pr_info("%s: last_good_ocv_raw/uv=0x%x/%duV, ocv_updated_flag=0x%x\n",
+		pr_debug("%s: last_good_ocv_raw/uv=0x%x/%duV, ocv_updated_flag=0x%x\n",
 				__func__, raw->last_good_ocv_raw, raw->last_good_ocv_uv,
 				ocv_updated_flag);
 	} else {
@@ -1523,7 +1523,7 @@ static int calculate_state_of_charge(struct pm8921_bms_chip *chip,
 		(pj_exist && (pj_chg_status == PJ_CHG_STATUS_DCHG))) {
 			last_soc = soc;
 	} else {
-		pr_info("soc = %d reporting last_soc = %d\n", soc, last_soc);
+		pr_debug("soc = %d reporting last_soc = %d\n", soc, last_soc);
 		soc = last_soc;
 	}
 

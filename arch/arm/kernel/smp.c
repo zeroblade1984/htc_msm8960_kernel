@@ -118,7 +118,7 @@ int __cpu_disable(void)
 
 	percpu_timer_stop();
 
-	flush_cache_all();
+	flush_cache_louis();
 	local_flush_tlb_all();
 
 	read_lock(&tasklist_lock);
@@ -530,9 +530,9 @@ void smp_send_stop(void)
 		smp_cross_call(&mask, IPI_CPU_STOP);
 
 	
-	timeout = USEC_PER_SEC;
+	timeout = MSEC_PER_SEC;
 	while (num_online_cpus() > 1 && timeout--)
-		udelay(1);
+		mdelay(1);
 
 	if (num_online_cpus() > 1)
 		pr_warning("SMP: failed to stop secondary CPUs\n");

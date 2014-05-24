@@ -36,13 +36,8 @@
 #include <linux/hash.h>
 #include <linux/freezer.h>
 #include <linux/oom.h>
-#include <linux/earlysuspend.h>
 
-#ifdef CONFIG_KSM_HTC_POLICY
-#include <linux/earlysuspend.h>
-#endif
-
-#ifdef CONFIG_KSM_HTC_POLICY
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
 
@@ -437,7 +432,9 @@ static void remove_rmap_item_from_tree(struct rmap_item *rmap_item)
 	} else if (rmap_item->address & UNSTABLE_FLAG) {
 		unsigned char age;
 		age = (unsigned char)(ksm_scan.seqnr - rmap_item->address);
+#ifndef CONFIG_KSM_CHECK_PAGE
 		BUG_ON(age > 1);
+#endif
 		if (!age)
 			rb_erase(&rmap_item->node, &root_unstable_tree);
 
@@ -1092,10 +1089,34 @@ next_mm:
 	ksm_scan.seqnr++;
 
 #ifdef CONFIG_KSM_HTC_POLICY
-	
 	ksm_run_state = KRS_RUN;
 #endif
 	return NULL;
+}
+
+static inline int is_page_scanned(struct page *page)
+{
+#ifdef CONFIG_KSM_CHECK_PAGE
+	/* page is already marked as ksm, so this will be simple merge */
+	if (PageKsm(page))
+		return 0;
+
+	if (ksm_scan.seqnr & 0x1) {
+		/* odd cycle */
+		/* clear even cycle bit */
+		ClearPageKsmScan0(page);
+		/* get old value and mark it scanned */
+		return TestSetPageKsmScan1(page);
+	} else {
+		/* even cycle */
+		/* clear odd cycle bit */
+		ClearPageKsmScan1(page);
+		/* get old value and mark it scanned */
+		return TestSetPageKsmScan0(page);
+	}
+#else
+	return 0;
+#endif
 }
 
 static void ksm_do_scan(unsigned int scan_npages)
@@ -1108,8 +1129,10 @@ static void ksm_do_scan(unsigned int scan_npages)
 		rmap_item = scan_get_next_rmap_item(&page);
 		if (!rmap_item)
 			return;
-		if (!PageKsm(page) || !in_stable_tree(rmap_item))
-			cmp_and_merge_page(page, rmap_item);
+		if (!PageKsm(page) || !in_stable_tree(rmap_item)) {
+			if (!is_page_scanned(page))
+				cmp_and_merge_page(page, rmap_item);
+		}
 		put_page(page);
 	}
 }

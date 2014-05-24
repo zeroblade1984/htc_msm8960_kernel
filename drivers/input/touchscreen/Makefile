@@ -58,7 +58,6 @@ obj-$(CONFIG_TOUCHSCREEN_TI_TSCADC)	+= ti_tscadc.o
 obj-$(CONFIG_TOUCHSCREEN_TNETV107X)	+= tnetv107x-ts.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI)	+= synaptics_i2c_rmi.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_3K)       += synaptics_3200.o rmi_dev.o
-obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_3K_DLX)       += synaptics_3200_dlx.o rmi_dev.o
 obj-$(CONFIG_TOUCHSCREEN_MAX11871)      += max11871.o
 obj-$(CONFIG_TOUCHSCREEN_MAX1187X)      += max1187x.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_RMI4_I2C) +=synaptics/

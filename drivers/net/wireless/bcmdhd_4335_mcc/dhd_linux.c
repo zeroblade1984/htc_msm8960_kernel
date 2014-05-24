@@ -110,8 +110,6 @@ static int prev_wlan_ioprio_idle=0;
 extern int multi_core_locked;
 dhd_pub_t *priv_dhdp = NULL;
 int is_screen_off = 0;
-int multicast_lock =0;
-static struct mutex enable_pktfilter_mutex;
 
 extern int net_os_send_hang_message(struct net_device *dev);
 void wl_android_set_screen_off(int off);
@@ -755,17 +753,10 @@ void dhd_set_packet_filter(dhd_pub_t *dhd)
 
 void dhd_enable_packet_filter(int value, dhd_pub_t *dhd)
 {
-	
 #ifdef PKT_FILTER_SUPPORT
 	int i;
-	
-	mutex_lock(&enable_pktfilter_mutex);
-	if(!multicast_lock&&is_screen_off)
-		value = 1;
-	else
-		value = 0;
-	printf("%s: enter, value = %d, multicast_lock = %d, is_screen_off= %d\n", __FUNCTION__, value, multicast_lock, is_screen_off);
-	
+
+	DHD_TRACE(("%s: enter, value = %d\n", __FUNCTION__, value));
 	
 	
 	if (dhd_pkt_filter_enable && (!value ||
@@ -785,13 +776,8 @@ void dhd_enable_packet_filter(int value, dhd_pub_t *dhd)
 				value, dhd_master_mode);
 		}
 	}
-	
-	mutex_unlock(&enable_pktfilter_mutex);
-	
 #endif 
-	
 }
-
 
 static int dhd_suspend_resume_helper(struct dhd_info *dhd, int val, int force)
 {
@@ -2228,16 +2214,16 @@ dhd_dpc_thread(void *data)
 #endif
 
 #ifdef CUSTOM_DPC_CPUCORE
-	set_cpus_allowed_ptr(current, cpumask_of(CUSTOM_DPC_CPUCORE));
+		set_cpus_allowed_ptr(current, cpumask_of(CUSTOM_DPC_CPUCORE));
 #endif 
 
 	
 	while (1) {
 #ifdef CUSTOMER_HW_ONE
-		if(prev_wlan_ioprio_idle != wlan_ioprio_idle) {
-			set_wlan_ioprio();
-			prev_wlan_ioprio_idle = wlan_ioprio_idle;
-		}
+        if(prev_wlan_ioprio_idle != wlan_ioprio_idle){
+            set_wlan_ioprio();
+            prev_wlan_ioprio_idle = wlan_ioprio_idle;
+        }
 #endif
 
 		if (!binary_sema_down(tsk)) {
@@ -2272,12 +2258,12 @@ dhd_dpc_thread(void *data)
 					}
 
 					if ((cpu_core == 0) && time_after(jiffies, start_time + 3*HZ)) {
-						ret = set_cpus_allowed_ptr(current, cpumask_of(nr_cpu_ids-1));
+						ret = set_cpus_allowed_ptr(current, cpumask_of(3));
 						if ( ret ) {
 							DHD_ERROR(("set_cpus_allowed_ptr to 3 failed, ret=%d\n", ret));
 						} else {
-							cpu_core = nr_cpu_ids - 1;
-							DHD_ERROR(("switch task to cpu %d due to over 3 secs.\n", cpu_core));
+							cpu_core = 3;
+							DHD_ERROR(("switch task to cpu 3 due to over 3 secs.\n"));
 						}
 					}
 #endif
@@ -2981,7 +2967,7 @@ dhd_stop(struct net_device *net)
 #if defined(CUSTOMER_HW_ONE) && defined(APSTA_CONCURRENT)
 		if (ap_net_dev || ((dhd->dhd_state & DHD_ATTACH_STATE_ADD_IF) &&
 			(dhd->dhd_state & DHD_ATTACH_STATE_CFG80211))) {
-			printf("clean interface and free parameters, and set ap_cfg_running to FALSE");
+			printf("clean interface and free parameters");
 			dhd_cleanup_virt_ifaces(dhd);
 			ap_net_dev = NULL;
 			ap_cfg_running = FALSE;
@@ -3372,16 +3358,12 @@ printf("Read PCBID = %x\n", system_rev);
 	}
 #endif
 
-#ifdef CONFIG_MACH_TC2
+#ifdef CONFIG_MACH_DUMMY
 	if (system_rev >= PVT){
 		strcpy(nvram_path, "/system/etc/calibration.gpio4");
 	}
 #endif
 
-#ifdef CONFIG_MACH_M4_UL
-	strcpy(nvram_path, "/system/etc/calibration.gpio4");
-#endif
-
 #ifdef CONFIG_MACH_DUMMY
 	strcpy(nvram_path, "/system/etc/calibration.gpio4");
 #endif
@@ -3398,7 +3380,11 @@ printf("Read PCBID = %x\n", system_rev);
 	strcpy(nvram_path, "/system/etc/calibration.gpio4");
 #endif
 
-#ifdef CONFIG_MACH_ZIP_CL
+#ifdef CONFIG_MACH_DUMMY
+	strcpy(nvram_path, "/system/etc/calibration.gpio4");
+#endif
+
+#ifdef CONFIG_MACH_DUMMY
 	strcpy(nvram_path, "/system/etc/calibration.gpio4");
 #endif
 
@@ -3930,7 +3916,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	uint32 dongle_align = DHD_SDALIGN;
 	uint32 glom = CUSTOM_GLOM_SETTING;
 #ifdef CUSTOMER_HW_ONE
-	uint bcn_timeout = 10;
+	uint bcn_timeout = 6;
 	uint retry_max = 10;
 #else
 	uint bcn_timeout = 4;
@@ -4360,9 +4346,6 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 				DHD_ERROR(("%s set keeplive failed %d\n",
 				__FUNCTION__, res));
 		}
-        
-        dhd_pkt_filter_enable = TRUE;
-        
 	}
 #endif 
 #ifdef USE_WL_TXBF
@@ -4536,10 +4519,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	dhd_arp_enable = arpoe;
 #endif 
 
-
 #ifdef PKT_FILTER_SUPPORT
-	mutex_init(&enable_pktfilter_mutex);
-	
 	
 	dhd->pktfilter_count = 6;
 	
@@ -6049,6 +6029,7 @@ int dhd_os_enable_packet_filter(dhd_pub_t *dhdp, int val)
 int net_os_enable_packet_filter(struct net_device *dev, int val)
 {
 	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
+
 	return dhd_os_enable_packet_filter(&dhd->pub, val);
 }
 #endif 
@@ -6076,7 +6057,6 @@ dhd_dev_pno_stop_for_ssid(struct net_device *dev)
 {
 	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
 
-	printf("enter %s \n",__FUNCTION__);
 	return (dhd_pno_stop_for_ssid(&dhd->pub));
 }
 int
@@ -6084,7 +6064,7 @@ dhd_dev_pno_set_for_ssid(struct net_device *dev, wlc_ssid_t* ssids_local, int ns
 	uint16  scan_fr, int pno_repeat, int pno_freq_expo_max, uint16 *channel_list, int nchan)
 {
 	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
-	printf("enter %s \n",__FUNCTION__);
+
 	return (dhd_pno_set_for_ssid(&dhd->pub, ssids_local, nssid, scan_fr,
 		pno_repeat, pno_freq_expo_max, channel_list, nchan));
 }
@@ -7140,7 +7120,6 @@ void htsf_update(dhd_info_t *dhd, void *data)
 
 #endif 
 
-extern void wl_cfg80211_dhd_chk_link(void);
 #ifndef CUSTOMER_HW_ONE
 static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 {
@@ -7319,7 +7298,7 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 				dhd_enable_packet_filter(1, dhd);
 				
 
-#if 0 
+#ifdef PNO_SUPPORT
 				
 				ret = dhd_set_pfn(dhd, 1);
 				if(ret < 0){
@@ -7353,7 +7332,6 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 #ifdef PKT_FILTER_SUPPORT
 				dhd->early_suspended = 0;
 #endif
-                wl_cfg80211_dhd_chk_link();
 				ret = dhdhtc_update_wifi_power_mode(is_screen_off);
 				if(ret < 0){
 					DHD_ERROR(("%s Set dhdhtc_update_wifi_power_mode error %d\n", __FUNCTION__, ret));
@@ -7369,7 +7347,7 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 				
 				DHD_TRACE(("%s: Remove extra suspend setting \n", __FUNCTION__));
 
-#if 0 
+#ifdef PNO_SUPPORT
 				ret = dhd_set_pfn(dhd, 0);
 				if(ret < 0){
 					DHD_ERROR(("%s Set pfn error %d\n", __FUNCTION__, ret));
@@ -7505,7 +7483,7 @@ adjust_rxf_thread_priority(void)
 				
 				cpumask_t mask;
 				cpumask_clear(&mask);
-				cpumask_set_cpu(nr_cpu_ids-1, &mask);
+				cpumask_set_cpu(3, &mask);
 				if (sched_setaffinity(0, &mask) < 0) {
 					printf("sched_setaffinity failed");
 				}
@@ -7531,17 +7509,8 @@ int wl_android_set_pktfilter(struct net_device *dev, struct dd_pkt_filter_s *dat
 {
     dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
     return dhd_set_pktfilter(&dhd->pub, data->add, data->id, data->offset, data->mask, data->pattern);
+
 }
-
-void wl_android_enable_pktfilter(struct net_device *dev, int multicastlock)
-{
-    dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
-	multicast_lock = multicastlock;
-	
-    dhd_enable_packet_filter(0, &dhd->pub);
-}
-
-
 
 bool check_hang_already(struct net_device *dev)
 {
@@ -7707,14 +7676,12 @@ int dhdhtc_update_wifi_power_mode(int is_screen_off)
 	int pm_type;
 	dhd_pub_t *dhd = priv_dhdp;
 	int ret = 0;
-        extern struct wl_priv *wlcfg_drv_priv;
 	if (!dhd) {
 		printf("dhd is not attached\n");
 		return -1;
 	}
 
 	if (dhdhtc_power_ctrl_mask) {
-            if(wlcfg_drv_priv && !(wlcfg_drv_priv->vsdb_mode)){
 		printf("power active. ctrl_mask: 0x%x\n", dhdhtc_power_ctrl_mask);
 		pm_type = PM_OFF;
 		ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_PM, (char *)&pm_type, sizeof(pm_type), TRUE, 0);
@@ -7722,9 +7689,7 @@ int dhdhtc_update_wifi_power_mode(int is_screen_off)
 			printf("%s set PM fail ret[%d]\n",__FUNCTION__,ret);
 			return ret;
 		}
-            }
 	} else {
-            if(wlcfg_drv_priv && !(wlcfg_drv_priv->vsdb_mode)){
 			pm_type = PM_FAST;
 		printf("update pm: %s, wifiLock: %d\n", pm_type==1?"PM_MAX":"PM_FAST", dhdcdc_wifiLock);
 		ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_PM, (char *)&pm_type, sizeof(pm_type), TRUE, 0);
@@ -7732,7 +7697,7 @@ int dhdhtc_update_wifi_power_mode(int is_screen_off)
 			printf("%s set PM fail ret[%d]\n",__FUNCTION__,ret);
 			return ret;
 		}
-            }
+
 	}
 
 	return 0;

@@ -463,6 +463,7 @@ static int msm_gpio_suspend(void)
 
 void msm_gpio_show_resume_irq(void)
 {
+#ifdef CONFIG_MSM_SHOW_RESUME_IRQ
 	unsigned long irq_flags;
 	int i, irq, intstat;
 
@@ -485,6 +486,7 @@ void msm_gpio_show_resume_irq(void)
 		}
 	}
 	spin_unlock_irqrestore(&tlmm_lock, irq_flags);
+#endif
 }
 
 static void msm_gpio_resume(void)

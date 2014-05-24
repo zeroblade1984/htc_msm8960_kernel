@@ -997,12 +997,6 @@ config TOUCHSCREEN_SYNAPTICS_3K
 	help
 	  This enables support for Synaptics RMI4 over I2C based touchscreens.
 
-config TOUCHSCREEN_SYNAPTICS_3K_DLX
-	tristate "Synaptics 3k serious i2c touchscreen"
-	depends on I2C
-	help
-	  This enables support for Synaptics RMI4 over I2C based touchscreens for the DLX builds.
-
 config TOUCHSCREEN_MAX11871
         tristate "Maxim max11871 touchscreen"
         depends on I2C
@@ -1028,5 +1022,10 @@ config TOUCHSCREEN_HIMAX
 		depends on I2C
 		help
 		This enables support for HIMAX HM852xD over I2C based touchscreens.
+
+config TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+        tristate "Sweep2Wake for SYNAPTICS_3k based touchscreens"
+        depends on TOUCHSCREEN_SYNAPTICS_3K
+        default n
 
 endif

@@ -102,13 +102,13 @@ armpmu_map_cache_event(unsigned (*cache_map)
 static int
 armpmu_map_event(const unsigned (*event_map)[PERF_COUNT_HW_MAX], u64 config)
 {
-	int mapping;
+        int mapping;
 
-	if (config >= PERF_COUNT_HW_MAX)
-		return -ENOENT;
+        if (config >= PERF_COUNT_HW_MAX)
+                return -EINVAL;
 
-	mapping = (*event_map)[config];
-	return mapping == HW_OP_UNSUPPORTED ? -ENOENT : mapping;
+        mapping = (*event_map)[config];
+        return mapping == HW_OP_UNSUPPORTED ? -ENOENT : mapping;
 }
 
 static int
@@ -707,11 +707,13 @@ static struct notifier_block __cpuinitdata pmu_cpu_notifier = {
 static int perf_cpu_pm_notifier(struct notifier_block *self, unsigned long cmd,
 		void *v)
 {
+	struct pmu *pmu;
 	switch (cmd) {
 	case CPU_PM_ENTER:
 		if (cpu_has_active_perf()) {
 			armpmu_update_counters();
-			perf_pmu_disable(&cpu_pmu->pmu);
+			pmu = &cpu_pmu->pmu;
+			pmu->pmu_disable(pmu);
 		}
 		break;
 

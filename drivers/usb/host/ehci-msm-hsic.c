@@ -258,9 +258,9 @@ EXPORT_SYMBOL_GPL(ehci_hsic_is_2nd_enum_done);
 extern int subsystem_restart(const char *name);
 struct msm_hsic_hcd *__mehci;
 
-static bool debug_bus_voting_enabled = true;
+static bool debug_bus_voting_enabled = false;
 
-static unsigned int enable_dbg_log = 1;
+static unsigned int enable_dbg_log = 0;
 module_param(enable_dbg_log, uint, S_IRUGO | S_IWUSR);
 static unsigned int ep_addr_rxdbg_mask = 9;
 module_param(ep_addr_rxdbg_mask, uint, S_IRUGO | S_IWUSR);
@@ -771,7 +771,7 @@ static void register_usb_notification_func(struct work_struct *work)
 #define ULPI_IO_TIMEOUT_USEC	(10 * 1000)
 
 #define USB_PHY_VDD_DIG_VOL_NONE	0 
-#define USB_PHY_VDD_DIG_VOL_MIN		1000000 
+#define USB_PHY_VDD_DIG_VOL_MIN		945000 
 #define USB_PHY_VDD_DIG_VOL_MAX		1320000 
 
 #define HSIC_DBG1_REG		0x38
@@ -1182,7 +1182,7 @@ static int msm_hsic_suspend(struct msm_hsic_hcd *mehci)
 	msm_hsic_suspend_timestamp = 0;
 	
 
-	dev_info(mehci->dev, "HSIC-USB in low power mode\n");
+	dev_dbg(mehci->dev, "HSIC-USB in low power mode\n");
 
 	return 0;
 }
@@ -1294,7 +1294,7 @@ skip_phy_resume:
 	spin_unlock_irqrestore(&mehci->wakeup_lock, flags);
 	
 
-	dev_info(mehci->dev, "HSIC-USB exited from low power mode\n");
+	dev_dbg(mehci->dev, "HSIC-USB exited from low power mode\n");
 
 	return 0;
 }
@@ -1933,10 +1933,10 @@ static irqreturn_t msm_hsic_wakeup_irq(int irq, void *data)
 
 		
 		if (!atomic_read(&mehci->in_lpm)) {
-			pr_info("%s(%d): mehci->in_lpm==0 !!!\n", __func__, __LINE__);
+			pr_debug("%s(%d): mehci->in_lpm==0 !!!\n", __func__, __LINE__);
 			if (atomic_read(&mehci->pm_usage_cnt)) {
 				atomic_set(&mehci->pm_usage_cnt, 0);
-				pr_info("%s(%d): pm_runtime_put_noidle !!!\n", __func__, __LINE__);
+				pr_debug("%s(%d): pm_runtime_put_noidle !!!\n", __func__, __LINE__);
 				pm_runtime_put_noidle(mehci->dev);
 			}
 		}
@@ -2477,25 +2477,16 @@ static int msm_hsic_pm_resume(struct device *dev)
 	if (device_may_wakeup(dev))
 		disable_irq_wake(hcd->irq);
 
-	if (hcd_to_bus(hcd)->skip_resume)
-	{
-		if (!atomic_read(&mehci->pm_usage_cnt) &&
-				pm_runtime_suspended(dev))
-		{
-			
-			if (get_radio_flag() & RADIO_FLAG_USB_UPLOAD) {
-				dev_info(dev, "skip ehci-msm-hsic PM resume\n");
-			}
-			
-			return 0;
-		}
-	}
-
+	/*
+	 * Keep HSIC in Low Power Mode if system is resumed
+	 * by any other wakeup source.  HSIC is resumed later
+	 * when remote wakeup is received or interface driver
+	 * start I/O.
+	 */
+	if (!atomic_read(&mehci->pm_usage_cnt) &&
+                       pm_runtime_suspended(dev))
+		return 0;
 	
-	if (get_radio_flag() & RADIO_FLAG_USB_UPLOAD)
-		dev_info(dev, "ehci-msm-hsic PM resume\n");
-	
-
 	ret = msm_hsic_resume(mehci);
 	if (ret)
 		return ret;

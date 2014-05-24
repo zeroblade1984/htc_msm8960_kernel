@@ -74,6 +74,9 @@ bool freeze_task(struct task_struct *p)
 {
 	unsigned long flags;
 
+	if (freezer_should_skip(p))
+		return false;
+
 	spin_lock_irqsave(&freezer_lock, flags);
 	if (!freezing(p) || frozen(p)) {
 		spin_unlock_irqrestore(&freezer_lock, flags);

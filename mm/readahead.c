@@ -261,14 +261,14 @@ static int try_context_readahead(struct address_space *mapping,
 	size = count_history_pages(mapping, ra, offset, max);
 
 	if (!size)
-		return 0;
+     		return 0;
 
 	if (size >= offset)
 		size *= 2;
 
 	ra->start = offset;
 	ra->size = get_init_ra_size(size + req_size, max);
-	ra->async_size = ra->size;
+  	ra->async_size = ra->size;
 
 	return 1;
 }

@@ -899,7 +899,7 @@ static int sii9234_probe(struct i2c_client *client,
 	disable_irq_nosync(pInfo->irq);
 	sii9244_interruptable = false;
 
-	pInfo->wq = create_workqueue("mhl_sii9234_wq");
+	pInfo->wq = create_singlethread_workqueue("mhl_sii9234_wq");
 	if (!pInfo->wq) {
 		PR_DISP_DEBUG("%s: can't create workqueue\n", __func__);
 		ret = -ENOMEM;

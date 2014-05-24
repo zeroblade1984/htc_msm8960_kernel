@@ -3495,7 +3495,7 @@ wl_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 
 	RETURN_EIO_IF_NOT_UP(wl);
 
-#if 0  
+#if defined(CUSTOMER_HW_ONE) && defined (PNO_SUPPORT)
 		if(dev == wl_to_prmry_ndev(wl)){
 			printf("%s sme->ssid[%s],sme->ssid_len[%d]\n", __FUNCTION__, sme->ssid,sme->ssid_len);
 			dhd_set_pfn_ssid(sme->ssid, sme->ssid_len);
@@ -4328,11 +4328,6 @@ wl_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
 		if (!wl_get_drv_status(wl, CONNECTED, dev) ||
 			(dhd_is_associated(dhd, NULL, &err) == FALSE)) {
 			WL_ERR(("NOT assoc\n"));
-            if (wl_get_drv_status(wl, CONNECTED, dev)) {
-                err = -ENODEV;
-                WL_ERR(("not sync driver state, disconnect\n"));
-                goto get_station_err;
-            }
 			if (err == -ERESTARTSYS)
 				return err;
 			err = -ENODEV;
@@ -4458,30 +4453,6 @@ get_station_err:
 	}
 
 	return err;
-}
-
-void wl_cfg80211_dhd_chk_link(void)
-{
-    s32 err;
-    struct wl_priv *wl = wlcfg_drv_priv;
-    struct net_device *dev = wl_to_prmry_ndev(wl);
-    dhd_pub_t *dhd =  (dhd_pub_t *)(wl->pub);
-
-    printf("%s wl_get_drv_status(wl, CONNECTED, dev) = %d\n",__FUNCTION__,wl_get_drv_status(wl, CONNECTED, dev));
-
-    if (wl_get_mode_by_netdev(wl, dev) == WL_MODE_BSS){
-        if (wl_get_drv_status(wl, CONNECTED, dev) && 
-                (dhd_is_associated(dhd, NULL, &err) == FALSE)) {
-            WL_ERR(("%s err1 code[%d]\n",__FUNCTION__,err));
-            if (err == BCME_NOTASSOCIATED){
-                WL_ERR(("%s NOT assoc\n",__FUNCTION__));
-                wl_clr_drv_status(wl, CONNECTED, dev);
-                cfg80211_disconnected(dev, 0, NULL, 0, GFP_KERNEL);
-                wl_link_down(wl);
-            }else
-                WL_ERR(("%s err code[%d]\n",__FUNCTION__,err));
-        }
-    }
 }
 
 int wl_cfg80211_update_power_mode(struct net_device *dev)
@@ -5593,10 +5564,6 @@ wl_cfg80211_set_channel(struct wiphy *wiphy, struct net_device *dev,
 	struct wl_priv *wl = wiphy_priv(wiphy);
 
 	dev = ndev_to_wlc_ndev(dev, wl);
-	if (!dev) {
-		printf("%s: no dev!\n", __func__);
-		dev = wl_to_prmry_ndev(wl);
-	}
 	_chan = ieee80211_frequency_to_channel(chan->center_freq);
 	WL_ERR(("netdev_ifidx(%d), chan_type(%d) target channel(%d) \n",
 		dev->ifindex, channel_type, _chan));
@@ -8522,10 +8489,12 @@ wl_notify_pfn_status(struct wl_priv *wl, bcm_struct_cfgdev *cfgdev,
 	ndev = cfgdev_to_wlc_ndev(cfgdev, wl);
 
 #ifndef WL_SCHED_SCAN
+#ifndef CUSTOMER_HW_ONE
 	mutex_lock(&wl->usr_sync);
 	
 	cfg80211_disconnected(ndev, 0, NULL, 0, GFP_KERNEL);
 	mutex_unlock(&wl->usr_sync);
+#endif
 #else
 	wl_notify_sched_scan_results(wl, ndev, e, data);
 #endif 
@@ -9557,7 +9526,7 @@ static s32 wl_notify_escan_complete(struct wl_priv *wl,
 	struct net_device *dev;
 
 	WL_DBG(("Enter \n"));
-	if (!ndev || !wl_to_prmry_ndev(wl)) {
+	if (!ndev) {
 		WL_ERR(("ndev is null\n"));
 		err = BCME_ERROR;
 		return err;
@@ -9604,7 +9573,7 @@ static s32 wl_notify_escan_complete(struct wl_priv *wl,
 		wl->sched_scan_req = NULL;
 	}
 #endif 
-	if (likely(wl->scan_request) && (wl->scan_request->wiphy == wl_to_wiphy(wl)) && (wl->scan_request->wiphy)) {
+	if (likely(wl->scan_request)) {
 		cfg80211_scan_done(wl->scan_request, aborted);
 		wl->scan_request = NULL;
 	}
@@ -10064,14 +10033,6 @@ static s32 wl_notifier_change_state(struct wl_priv *wl, struct net_info *_net_in
 			schedule_delayed_work(&wl->pm_enable_work,
 				msecs_to_jiffies(WL_PM_ENABLE_TIMEOUT));
 		}
-
-#ifdef CUSTOMER_HW_ONE
-			if (wl->vsdb_mode){
-				wldev_miracast_tuning(primary_dev, 1);
-				wl_cfg80211_adj_mira_pm(1);
-                        }
-#endif
-
 	}
 	 else { 
 		chan = 0;
@@ -10096,13 +10057,6 @@ static s32 wl_notifier_change_state(struct wl_priv *wl, struct net_info *_net_in
 			}
 		}
 		wl_cfg80211_concurrent_roam(wl, 0);
-
-#ifdef CUSTOMER_HW_ONE
-		if (!wl->vsdb_mode){
-			wldev_miracast_tuning(primary_dev, 0);
-                        wl_cfg80211_adj_mira_pm(0);
-                }
-#endif
 	}
 	return err;
 }
@@ -13437,7 +13391,6 @@ static void wl_cfg80211_hotspot_event_process(struct net_device *ndev, const wl_
 
 			if (status) {
 				printf("reach max!!\n");
-                wl_iw_send_priv_event(ndev, "MAX_CLIENT");
 				break;
 			}
 
@@ -13605,41 +13558,4 @@ wl_cfg80211_set_scan_abort(struct net_device *ndev)
     return 0;
 }
 
-void wl_cfg80211_adj_mira_pm(int is_vsdb)
-{
-	struct wl_priv *wl = wlcfg_drv_priv;
-	struct net_device *dev;
-	int pm;
-	int err;
-
-	if(!wl) {
-		printf("%s : wl is null, return\n",__func__);
-		return;
-	}
-
-	dev = wl_to_prmry_ndev(wl);
-
-	if(!dev){
-		printf("%s : dev is null, return\n",__func__);
-		return;
-	}
-
-        if(!wl->p2p){
-            printf("%s wl->p2p is NULL \n",__func__);
-            return;
-        }
-
-	if(wl->p2p->vif_created){
-		pm = is_vsdb ? 0:2;
-		pm = htod32(pm);
-		printf("%s:power save %s\n", dev->name, (pm ? "enabled" : "disabled"));
-		err = wldev_ioctl(dev, WLC_SET_PM, &pm, sizeof(pm), true);
-		if (unlikely(err)) {
-			if (err == -ENODEV)
-				WL_DBG(("net_device is not ready yet\n"));
-			else
-				WL_ERR(("error (%d)\n", err));
-		}
-	}
-}
 #endif 

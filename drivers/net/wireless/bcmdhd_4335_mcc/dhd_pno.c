@@ -144,8 +144,10 @@ _dhd_pno_enable(dhd_pub_t *dhd, int enable)
 			dhd_is_associated(dhd, NULL, NULL)) {
 			DHD_ERROR(("%s Legacy PNO mode cannot be enabled "
 				"in assoc mode , ignore it\n", __FUNCTION__));
+#ifndef CUSTOMER_HW_ONE
 			err = BCME_BADOPTION;
 			goto exit;
+#endif
 		}
 	}
 	
@@ -734,7 +736,7 @@ dhd_pno_stop_for_ssid(dhd_pub_t *dhd)
 		DHD_ERROR(("%s : LEGACY PNO MODE is not enabled\n", __FUNCTION__));
 		goto exit;
 	}
-	DHD_ERROR(("%s enter\n", __FUNCTION__));
+	DHD_PNO(("%s enter\n", __FUNCTION__));
 	_pno_state->pno_mode &= ~DHD_PNO_LEGACY_MODE;
 	
 	if (_pno_state->pno_mode & (DHD_PNO_BATCH_MODE | DHD_PNO_HOTLIST_MODE)) {
@@ -827,7 +829,7 @@ dhd_pno_set_for_ssid(dhd_pub_t *dhd, wlc_ssid_t* ssid_list, int nssid,
 		err = BCME_BADOPTION;
 		goto exit;
 	}
-	DHD_ERROR(("%s enter : scan_fr :%d, pno_repeat :%d,"
+	DHD_PNO(("%s enter : scan_fr :%d, pno_repeat :%d,"
 			"pno_freq_expo_max: %d, nchan :%d\n", __FUNCTION__,
 			scan_fr, pno_repeat, pno_freq_expo_max, nchan));
 
@@ -1355,7 +1357,7 @@ dhd_pno_get_for_batch(dhd_pub_t *dhd, char *buf, int bufsize, int reason)
 		err = BCME_BADOPTION;
 		goto exit;
 	}
-	DHD_ERROR(("%s enter\n", __FUNCTION__));
+	DHD_PNO(("%s enter\n", __FUNCTION__));
 	_pno_state = PNO_GET_PNOSTATE(dhd);
 
 	if (!WLS_SUPPORTED(_pno_state)) {

@@ -40,8 +40,9 @@ struct wakeup_source {
 	unsigned long		event_count;
 	unsigned long		active_count;
 	unsigned long		relax_count;
-	unsigned long		hit_count;
-	unsigned int		active:1;
+	unsigned long		expire_count;
+	unsigned long		wakeup_count;
+	bool			active:1;
 };
 
 #ifdef CONFIG_PM_SLEEP

@@ -368,8 +368,7 @@ const struct cntry_locales_custom translate_custom_table[] = {
 #ifdef BCM4334_CHIP
 	{"RU", "RU", 5},
 	{"SG", "SG", 4},
-	{"US", "US", 109},
-	{"CN", "CN", 30},
+	{"US", "US", 109}
 #endif
 #ifdef BCM4330_CHIP
 	{"RU", "RU", 1},

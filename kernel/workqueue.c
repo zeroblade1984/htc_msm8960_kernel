@@ -2025,7 +2025,6 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	unsigned int cpu;
 	size_t namelen;
 
-	
 	va_start(args, lock_name);
 	va_copy(args1, args);
 	namelen = vsnprintf(NULL, 0, fmt, args) + 1;
@@ -2619,6 +2618,7 @@ unsigned long get_work_func_of_task_struct(struct task_struct *tsk)
 	return 0;
 }
 
+#if 0
 void show_pending_work_on_gcwq(void)
 {
 	struct work_struct *work;
@@ -2633,6 +2633,7 @@ void show_pending_work_on_gcwq(void)
 	}
 }
 EXPORT_SYMBOL(show_pending_work_on_gcwq);
+#endif
 
 static int __init init_workqueues(void)
 {

@@ -1511,17 +1511,18 @@ dhd_pktfilter_offload_enable(dhd_pub_t * dhd, char *arg, int enable, int master_
 	rc = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, buf, buf_len, TRUE, 0);
 	rc = rc >= 0 ? 0 : rc;
 	if (rc)
-		printf("%s: failed to add pktfilter %s, retcode = %d\n",__FUNCTION__, arg, rc);
+		DHD_TRACE(("%s: failed to add pktfilter %s, retcode = %d\n",
+		__FUNCTION__, arg, rc));
 	else
-		printf("%s: successfully %s pktfilter %s\n", __FUNCTION__, (enable? "enable" : "disable"), arg);
-	
+		DHD_TRACE(("%s: successfully added pktfilter %s\n",
+		__FUNCTION__, arg));
 
 	
 	bcm_mkiovar("pkt_filter_mode", (char *)&master_mode, 4, buf, sizeof(buf));
 	rc = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, buf, sizeof(buf), TRUE, 0);
 	rc = rc >= 0 ? 0 : rc;
 	if (rc)
-		DHD_ERROR(("%s: failed to add pktfilter %s, retcode = %d\n",
+		DHD_TRACE(("%s: failed to add pktfilter %s, retcode = %d\n",
 		__FUNCTION__, arg, rc));
 
 fail:
@@ -1648,9 +1649,11 @@ dhd_pktfilter_offload_set(dhd_pub_t * dhd, char *arg)
 	rc = rc >= 0 ? 0 : rc;
 
 	if (rc)
-		printf("%s: failed to add pktfilter %s, retcode = %d\n", __FUNCTION__, arg, rc);
+		DHD_TRACE(("%s: failed to add pktfilter %s, retcode = %d\n",
+		__FUNCTION__, arg, rc));
 	else
-		printf("%s: successfully added pktfilter %s\n", __FUNCTION__, arg);
+		DHD_TRACE(("%s: successfully added pktfilter %s\n",
+		__FUNCTION__, arg));
 
 fail:
 	if (arg_org)
@@ -1668,10 +1671,9 @@ void dhd_pktfilter_offload_delete(dhd_pub_t *dhd, int id)
 	bcm_mkiovar("pkt_filter_delete", (char *)&id, 4, iovbuf, sizeof(iovbuf));
 	ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
 	if (ret < 0) {
-		printf("%s: Failed to delete filter ID:%d, ret=%d\n",__FUNCTION__, id, ret);
-	} else {
-        printf("%s: Delete filter ID:%d\n", __FUNCTION__, id);
-    }
+		DHD_ERROR(("%s: Failed to delete filter ID:%d, ret=%d\n",
+			__FUNCTION__, id, ret));
+	}
 }
 #endif 
 
@@ -2540,7 +2542,7 @@ int dhd_set_pktfilter(dhd_pub_t * dhd, int add, int id, int offset, char *mask, 
 	enable_parm.enable = htod32(1);
 	
 #if defined(APSTA_CONCURRENT) && defined(SOFTAP)
-		if (ap_cfg_running) {
+		if ( ap_net_dev ) {
 			printf("%s: apsta concurrent running, just add but don't enable rule id:%d\n", __FUNCTION__, pkt_id);
 			enable_parm.enable = htod32(0);
 		} else

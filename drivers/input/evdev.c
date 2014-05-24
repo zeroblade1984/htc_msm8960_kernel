@@ -50,7 +50,7 @@ struct evdev_client {
 	struct evdev *evdev;
 	struct list_head node;
 	unsigned int bufsize;
-	struct input_event buffer[];
+	struct input_event *buffer;
 };
 
 static struct evdev *evdev_table[EVDEV_MINORS];
@@ -248,7 +248,8 @@ static int evdev_release(struct inode *inode, struct file *file)
 	mutex_unlock(&evdev->mutex);
 
 	evdev_detach_client(evdev, client);
-	wake_lock_destroy(&client->wake_lock);
+		wake_lock_destroy(&client->wake_lock);
+	kfree(client->buffer);
 	kfree(client);
 
 	evdev_close_device(evdev);
@@ -290,12 +291,18 @@ static int evdev_open(struct inode *inode, struct file *file)
 
 	bufsize = evdev_compute_buffer_size(evdev->handle.dev);
 
-	client = kzalloc(sizeof(struct evdev_client) +
-				bufsize * sizeof(struct input_event),
-			 GFP_KERNEL);
+	client = kzalloc(sizeof(struct evdev_client), GFP_KERNEL);
 	if (!client) {
 		error = -ENOMEM;
 		goto err_put_evdev;
+	} else {
+		client->buffer = kzalloc(bufsize * sizeof(struct input_event),
+					GFP_KERNEL);
+		if (!client->buffer) {
+			kfree(client);
+			error = -ENOMEM;
+			goto err_put_evdev;
+		}
 	}
 
 	client->bufsize = bufsize;
@@ -318,6 +325,7 @@ static int evdev_open(struct inode *inode, struct file *file)
  err_free_client:
 	evdev_detach_client(evdev, client);
 	wake_lock_destroy(&client->wake_lock);
+	kfree(client->buffer);
 	kfree(client);
  err_put_evdev:
 	put_device(&evdev->dev);
