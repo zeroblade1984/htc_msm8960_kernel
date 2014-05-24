@@ -136,11 +136,7 @@ define_int_show(thermal_batt, thermal_batt_value);
 define_int_store(thermal_batt, thermal_batt_value, null_cb);
 power_attr(thermal_batt);
 
-#ifdef CONFIG_GPU_OVERCLOCK
-static unsigned int info_gpu_max_clk = 450000000;
-#else
 static unsigned int info_gpu_max_clk = 400000000;
-#endif
 void set_gpu_clk(unsigned int value)
 {
         info_gpu_max_clk = value;
