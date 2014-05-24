@@ -2,18 +2,12 @@
 # Makefile for the HTC board
 #
 
-# DLXP_UL
-obj-$(MACH_DLXP_UL) += board-dlxpul/
-
 # DELUXE_U
 obj-$(MACH_DELUXE_U) += board-dlxu/
 
 # DELUXE_UB1
 obj-$(MACH_DELUXE_UB1) += board-dlxub1/
 
-# ZARA
+# DLX
 obj-$(MACH_MONARUDO) += board-monarudo/
-
-# M7
-obj-$(CONFIG_MACH_M7_UL) += board-m7/
 
