@@ -87,7 +87,7 @@
 #define WLC_HT_TKIP_RESTRICT    0x02     
 #define WLC_HT_WEP_RESTRICT     0x01    
 
-#define CUSTOM_AP_AMPDU_BA_WSIZE    16
+#define CUSTOM_AP_AMPDU_BA_WSIZE    32
 
 extern int dhdcdc_set_ioctl(dhd_pub_t *dhd, int ifidx, uint cmd, void *buf, uint len);
 extern int wl_android_is_during_wifi_call(void);
@@ -4172,9 +4172,6 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	}
 	if ((!op_mode && strstr(fw_path, "_apsta") != NULL) ||
 		(op_mode == DHD_FLAG_HOSTAP_MODE)) {
-#ifdef DHDTCPACK_SUPPRESS
-		dhd_use_tcpack_suppress = FALSE;
-#endif
         ampdu_ba_wsize = CUSTOM_AP_AMPDU_BA_WSIZE;
 #ifdef SET_RANDOM_MAC_SOFTAP
 		uint rand_mac;
@@ -4214,9 +4211,6 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	}
 	else {
 		uint32 concurrent_mode = 0;
-#ifdef DHDTCPACK_SUPPRESS
-		dhd_use_tcpack_suppress = TRUE;
-#endif
 		if ((!op_mode && strstr(fw_path, "_p2p") != NULL) ||
 			(op_mode == DHD_FLAG_P2P_MODE)) {
 #if defined(ARP_OFFLOAD_SUPPORT)
@@ -6377,10 +6371,10 @@ int dhd_os_wake_lock_timeout(dhd_pub_t *pub)
 #ifdef CONFIG_HAS_WAKELOCK
 		if (dhd->wakelock_rx_timeout_enable)
 			wake_lock_timeout(&dhd->wl_rxwake,
-				msecs_to_jiffies(dhd->wakelock_rx_timeout_enable)/4);
+				msecs_to_jiffies(dhd->wakelock_rx_timeout_enable));
 		if (dhd->wakelock_ctrl_timeout_enable)
 			wake_lock_timeout(&dhd->wl_ctrlwake,
-				msecs_to_jiffies(dhd->wakelock_ctrl_timeout_enable)/4);
+				msecs_to_jiffies(dhd->wakelock_ctrl_timeout_enable));
 #endif
 		dhd->wakelock_rx_timeout_enable = 0;
 		dhd->wakelock_ctrl_timeout_enable = 0;
