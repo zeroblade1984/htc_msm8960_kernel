@@ -240,7 +240,7 @@ static void tick_nohz_stop_sched_tick(struct tick_sched *ts)
 		static int ratelimit;
 
 		if (ratelimit < 10) {
-			printk(KERN_ERR "NOHZ: local_softirq_pending %02x\n",
+			pr_err("NOHZ: local_softirq_pending %02x\n",
 			       (unsigned int) local_softirq_pending());
 			ratelimit++;
 		}
