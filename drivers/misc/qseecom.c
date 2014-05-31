@@ -550,14 +550,14 @@ static int __qseecom_process_incomplete_cmd(struct qseecom_dev_handle *data,
 		spin_unlock_irqrestore(&qseecom.registered_listener_list_lock,
 				flags);
 		if (ptr_svc->svc.listener_id != lstnr) {
-			pr_warning("Service requested for does on exist\n");
+			pr_debug("Service requested for does on exist\n");
 			return -ERESTARTSYS;
 		}
 		pr_debug("waking up rcv_req_wq and "
 				"waiting for send_resp_wq\n");
 		if (wait_event_freezable(qseecom.send_resp_wq,
 				__qseecom_listener_has_sent_rsp(data))) {
-			pr_warning("Interrupted: exiting send_cmd loop\n");
+			pr_debug("Interrupted: exiting send_cmd loop\n");
 			return -ERESTARTSYS;
 		}
 
@@ -645,7 +645,7 @@ static int qseecom_load_app(struct qseecom_dev_handle *data, void __user *argp)
 	
 	ret = qsee_vote_for_clock(CLK_SFPB);
 	if (ret)
-		pr_warning("Unable to vote for SFPB clock");
+		pr_debug("Unable to vote for SFPB clock");
 
 	req.qsee_cmd_id = QSEOS_APP_LOOKUP_COMMAND;
 	memcpy(req.app_name, load_img_req.img_name, MAX_APP_NAME_SIZE);
@@ -905,7 +905,7 @@ static int __qseecom_send_cmd_legacy(struct qseecom_dev_handle *data,
 				"waiting for send_resp_wq\n");
 		if (wait_event_freezable(qseecom.send_resp_wq,
 				__qseecom_listener_has_sent_rsp(data))) {
-			pr_warning("qseecom Interrupted: exiting send_cmd loop\n");
+			pr_debug("qseecom Interrupted: exiting send_cmd loop\n");
 			return -ERESTARTSYS;
 		}
 
@@ -1120,7 +1120,7 @@ static int qseecom_receive_req(struct qseecom_dev_handle *data)
 		if (wait_event_freezable(this_lstnr->rcv_req_wq,
 				__qseecom_listener_has_rcvd_req(data,
 				this_lstnr))) {
-			pr_warning("Interrupted: exiting wait_rcv_req loop\n");
+			pr_debug("Interrupted: exiting wait_rcv_req loop\n");
 			
 			return -ERESTARTSYS;
 		}
