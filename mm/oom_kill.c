@@ -186,7 +186,7 @@ static enum oom_constraint constrained_alloc(struct zonelist *zonelist,
 	if (gfp_mask & __GFP_THISNODE)
 		return CONSTRAINT_NONE;
 
-	if (nodemask && !nodes_subset(node_states[N_HIGH_MEMORY], *nodemask)) {
+	if (nodemask && !nodes_subset(node_states[N_MEMORY], *nodemask)) {
 		*totalpages = total_swap_pages;
 		for_each_node_mask(nid, *nodemask)
 			*totalpages += node_spanned_pages(nid);
