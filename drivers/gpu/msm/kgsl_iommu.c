@@ -419,6 +419,7 @@ static void kgsl_iommu_clk_disable_event(struct kgsl_device *device, void *data,
 				iommu->clk_event_queued = false;
 		}
 	}
+	kfree(param);
 }
 
 static void
