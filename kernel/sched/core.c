@@ -4647,7 +4647,7 @@ static const struct cpumask *cpu_cpu_mask(int cpu)
 }
 
 /* sched_mc & sched_mt parameter settings */
-int sched_smt_power_savings = 0, sched_mc_power_savings = 2;
+int sched_smt_power_savings = 0, sched_mc_power_savings = 0;
 
 struct sd_data {
 	struct sched_domain **__percpu sd;
