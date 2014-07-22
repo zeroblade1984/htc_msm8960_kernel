@@ -240,9 +240,9 @@ static int panic_wdog_handler(struct notifier_block *this,
 		mb();
 		set_WDT_EN_footprint(0);
 	} else {
-		__raw_writel(WDT_HZ * (panic_timeout + 4),
+		__raw_writel(WDT_HZ * (panic_timeout + 10),
 				msm_tmr0_base + WDT0_BARK_TIME);
-		__raw_writel(WDT_HZ * (panic_timeout + 4),
+		__raw_writel(WDT_HZ * (panic_timeout + 10),
 				msm_tmr0_base + WDT0_BITE_TIME);
 		__raw_writel(1, msm_tmr0_base + WDT0_RST);
 	}
