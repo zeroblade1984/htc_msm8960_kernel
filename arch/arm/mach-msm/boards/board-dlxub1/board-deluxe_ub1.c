@@ -253,10 +253,6 @@ enum {
        SX150X_EPM,
 };
 
-#ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
-int set_two_phase_freq(int cpufreq);
-#endif
-
 #ifdef CONFIG_KERNEL_PMEM_EBI_REGION
 static unsigned pmem_kernel_ebi1_size = MSM_PMEM_KERNEL_EBI1_SIZE;
 static int __init pmem_kernel_ebi1_size_setup(char *p)
@@ -4853,12 +4849,6 @@ static void __init deluxe_ub1_cdp_init(void)
 #ifdef CONFIG_MSM_CAMERA
 	deluxe_ub1_init_cam();
 #endif
-
-#ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
-        if(!cpu_is_krait_v1())
-                set_two_phase_freq(1134000);
-#endif
-
 	
 	
 	if (!(board_mfg_mode() == 6 || board_mfg_mode() == 7))
