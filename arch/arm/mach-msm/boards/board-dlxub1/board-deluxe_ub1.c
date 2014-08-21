@@ -122,10 +122,6 @@
 #include <mach/mhl.h>
 #endif
 
-#ifdef CONFIG_TSIF
-#include <mach/msm_tsif.h>
-#endif
-
 #ifdef CONFIG_SUPPORT_USB_SPEAKER
 #include <linux/pm_qos.h>
 #endif
@@ -173,11 +169,6 @@
 static int hdmi_enable_5v(int on);
 static int hdmi_core_power(int on, int show);
 extern void hdmi_hpd_feature(int enable);
-#endif
-
-#ifdef CONFIG_FELICA_CXD2235_DD
-#include <linux/platform_device.h>
-#include <linux/felica_cxd2235.h>
 #endif
 
 #define TFA9887_I2C_SLAVE_ADDR	(0x68 >> 1)
@@ -240,14 +231,6 @@ static struct i2c_board_info msm_i2c_gsbi1_tfa9887_info[] = {
 #define        GPIO_EXPANDER_IRQ_BASE  (PM8821_IRQ_BASE + PM8821_NR_IRQS)
 #define        GPIO_EXPANDER_GPIO_BASE (PM8821_MPP_BASE + PM8821_NR_MPPS)
 #define        GPIO_EPM_EXPANDER_BASE  GPIO_EXPANDER_GPIO_BASE
-
-#if defined(CONFIG_TSIF) || defined(CONFIG_TSIF_MODULE)
-static struct platform_device nm32x_62x_tsi_device = {
-	.name = "nm32x_62x-tsi",
-};
-
-#endif 
-
 
 enum {
        SX150X_EPM,
@@ -546,111 +529,6 @@ static struct platform_device deluxe_ub1_ion_dev = {
 	.name = "ion-msm",
 	.id = 1,
 	.dev = { .platform_data = &ion_pdata },
-};
-#endif
-
-#ifdef CONFIG_TSIF
-
-#define MSM_TSIF0_PHYS       (0x18200000)
-#define MSM_TSIF1_PHYS       (0x18201000)
-#define MSM_TSIF_SIZE        (0x200)
-
-#define TSIF_0_CLK       GPIO_CFG(TS_CLK_XA, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA)
-#define TSIF_0_EN        GPIO_CFG(TS_EN_XA, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA)
-#define TSIF_0_DATA      GPIO_CFG(TS_DATA_XA, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA)
-#define TSIF_0_SYNC      GPIO_CFG(TS_SYNC_XA, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA)
-
-#define TSIF_1_CLK       GPIO_CFG(TS_CLK_XB, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA)
-#define TSIF_1_EN        GPIO_CFG(TS_EN_XB, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA)
-#define TSIF_1_DATA      GPIO_CFG(TS_DATA_XB, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA)
-#define TSIF_1_SYNC      GPIO_CFG(TS_SYNC_XB, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA)
-
-static const struct msm_gpio tsif0_gpios[] = {
-};
-
-static const struct msm_gpio tsif1_gpios[] = {
-   { .gpio_cfg = TSIF_1_CLK,  .label =  "tsif_clk", },
-   { .gpio_cfg = TSIF_1_EN,   .label =  "tsif_en", },
-   { .gpio_cfg = TSIF_1_DATA, .label =  "tsif_data", },
-   { .gpio_cfg = TSIF_1_SYNC, .label =  "tsif_sync", },
-};
-
-static void tsif_release(struct device *dev)
-{
-}
-
-struct msm_tsif_platform_data tsif1_platform_data = {
-	.num_gpios = ARRAY_SIZE(tsif1_gpios),
-	.gpios = tsif1_gpios,
-	.tsif_pclk = "tsif_pclk",
-	.tsif_ref_clk = "tsif_ref_clk",
-	.init = 0
-};
-
-struct resource tsif1_resources[] = {
-	[0] = {
-		.flags = IORESOURCE_IRQ,
-		.start = TSIF2_IRQ,
-		.end   = TSIF2_IRQ,
-	},
-	[1] = {
-		.flags = IORESOURCE_MEM,
-		.start = MSM_TSIF1_PHYS,
-		.end   = MSM_TSIF1_PHYS + MSM_TSIF_SIZE - 1,
-	},
-	[2] = {
-		.flags = IORESOURCE_DMA,
-		.start = DMOV_TSIF_CHAN,
-		.end   = DMOV_TSIF_CRCI,
-	},
-};
-
-struct msm_tsif_platform_data tsif0_platform_data = {
-	.num_gpios = ARRAY_SIZE(tsif0_gpios),
-	.gpios = tsif0_gpios,
-	.tsif_pclk = "tsif_pclk",
-	.tsif_ref_clk = "tsif_ref_clk",
-	.init = 0
-};
-struct resource tsif0_resources[] = {
-	[0] = {
-		.flags = IORESOURCE_IRQ,
-		.start = TSIF1_IRQ,
-		.end   = TSIF1_IRQ,
-	},
-	[1] = {
-		.flags = IORESOURCE_MEM,
-		.start = MSM_TSIF0_PHYS,
-		.end   = MSM_TSIF0_PHYS + MSM_TSIF_SIZE - 1,
-	},
-	[2] = {
-		.flags = IORESOURCE_DMA,
-		.start = DMOV_TSIF_CHAN,
-		.end   = DMOV_TSIF_CRCI,
-	},
-};
-
-struct platform_device msm_device_tsif[2] = {
-	{
-		.name          = "msm_tsif",
-		.id            = 0,
-		.num_resources = ARRAY_SIZE(tsif0_resources),
-		.resource      = tsif0_resources,
-		.dev = {
-			.release       = tsif_release,
-			.platform_data = &tsif0_platform_data
-		},
-	},
-	{
-		.name          = "msm_tsif",
-		.id            = 1,
-		.num_resources = ARRAY_SIZE(tsif1_resources),
-		.resource      = tsif1_resources,
-		.dev = {
-			.release       = tsif_release,
-			.platform_data = &tsif1_platform_data
-		},
-	}
 };
 #endif
 
@@ -1017,12 +895,14 @@ static struct htc_battery_platform_data htc_battery_pdev_data = {
 	.icharger.set_limit_charge_enable = smb349_limit_charge_enable,
 	.icharger.is_batt_charge_enable =  smb349_is_batt_charge_enable,
 	.icharger.get_attr_text = pm8921_charger_get_attr_text_with_ext_charger,
+	.icharger.max_input_current = smb349_set_hsml_target_ma,
 	.icharger.enable_5v_output = smb349_enable_5v_output,
 #else
 	.icharger.name = "pm8921",
 	.icharger.sw_safetytimer = 0,
 	.icharger.set_limit_charge_enable = pm8921_limit_charge_enable,
 	.icharger.get_attr_text = pm8921_charger_get_attr_text,
+	.icharger.max_input_current =pm8921_set_hsml_target_ma,
 	.icharger.enable_5v_output = NULL,
 #endif
 	.icharger.get_charging_source = pm8921_get_charging_source,
@@ -1679,7 +1559,7 @@ static struct android_usb_platform_data android_usb_pdata = {
 	.usb_id_pin_gpio = USB1_HS_ID_GPIO,
 	.usb_rmnet_interface = "HSIC:HSIC",
 	.usb_diag_interface = "diag,diag_mdm",
-	.fserial_init_string = "HSIC:modem,tty,tty:autobot,tty:serial,tty:autobot",
+	.fserial_init_string = "HSIC:modem,tty,tty:autobot,tty:serial,tty:autobot,tty:acm",
 	.serial_number = "000000000000",
 	.nluns		= 1,
 };
@@ -1958,8 +1838,6 @@ static void headset_init(void)
 	}
 }
 
-
-
 static void headset_power(int enable)
 {
 
@@ -2093,170 +1971,6 @@ static void headset_device_register(void)
 
 	platform_device_register(&htc_headset_mgr);
 }
-
-#ifdef CONFIG_FELICA_CXD2235_DD
-static void deluxe_ub1_felica_pon_gpio_func(int rwtype, int wvalue, int *rvalue)
-{
-	if (rwtype == GPIOWRITE) {
-		
-		gpio_set_value(PM8921_GPIO_PM_TO_SYS(FEL_PON), wvalue);
-	}
-	else if (rwtype == GPIOREAD) {
-		*rvalue = gpio_get_value(PM8921_GPIO_PM_TO_SYS(FEL_PON));
-		
-	}
-
-	return;
-}
-
-static void deluxe_ub1_felica_cen_dtyp_d_func(int rwtype, int wvalue, int *rvalue)
-{
-	if (rwtype == GPIOWRITE) {
-		gpio_set_value(PM8921_GPIO_PM_TO_SYS(FEL_CEN), wvalue);
-	}
-	else if (rwtype == GPIOREAD) {
-		*rvalue = gpio_get_value(PM8921_GPIO_PM_TO_SYS(FEL_CEN));
-	}
-
-	return;
-}
-
-static void deluxe_ub1_felica_cen_dtyp_cp_func(int rwtype, int wvalue, int *rvalue)
-{
-	if (rwtype == GPIOWRITE) {
-		gpio_set_value(PM8921_GPIO_PM_TO_SYS(FEL_LOCK), wvalue);
-	}
-	else if (rwtype == GPIOREAD) {
-		*rvalue = gpio_get_value(PM8921_GPIO_PM_TO_SYS(FEL_LOCK));
-	}
-
-	return;
-}
-
-static void deluxe_ub1_felica_cen_gpio_func(int rwtype, int wvalue, int *rvalue)
-{
-	if (rwtype == GPIOWRITE) {
-		printk(KERN_INFO "[FELICA_DD] %s set cen[%x]\n", __func__, wvalue);
-		gpio_set_value_cansleep(PM8921_GPIO_PM_TO_SYS(FEL_LOCK), GPIO_VALUE_LOW);
-		gpio_set_value_cansleep(PM8921_GPIO_PM_TO_SYS(FEL_CEN), wvalue);
-		msleep(1);
-		gpio_set_value_cansleep(PM8921_GPIO_PM_TO_SYS(FEL_LOCK), GPIO_VALUE_HIGH);
-		msleep(1);
-		gpio_set_value_cansleep(PM8921_GPIO_PM_TO_SYS(FEL_LOCK), GPIO_VALUE_LOW);
-		msleep(1);
-		gpio_set_value_cansleep(PM8921_GPIO_PM_TO_SYS(FEL_CEN), GPIO_VALUE_LOW);
-	}
-	else if (rwtype == GPIOREAD) {
-		*rvalue = gpio_get_value(PM8921_GPIO_PM_TO_SYS(FEL_CENz))?  FELICA_CEN_LOCK : FELICA_CEN_UNLOCK;
-		
-	}
-
-	return;
-}
-
-static void deluxe_ub1_felica_rfs_gpio_func(int rwtype, int wvalue, int *rvalue)
-{
-	if (rwtype == GPIOREAD) {
-		*rvalue = gpio_get_value(PM8921_GPIO_PM_TO_SYS(FEL_RFS));
-		
-	}
-
-	return;
-}
-
-static void deluxe_ub1_felica_int_gpio_func(int rwtype, int wvalue, int *rvalue)
-{
-	if (rwtype == GPIOREAD) {
-		*rvalue = gpio_get_value(PM8921_GPIO_PM_TO_SYS(FEL_INT));
-		 printk(KERN_INFO "[FELICA_DD] %s int[%x]\n", __func__, *rvalue);
-	}
-
-	return;
-}
-
-static void deluxe_ub1_felica_con_gpio_func(int rwtype, int wvalue, int *rvalue)
-{
-	return;
-}
-
-static void deluxe_ub1_felica_hsel_gpio_func(int rwtype, int wvalue, int *rvalue)
-{
-	unsigned ret;
-
-	struct pm8xxx_mpp_config_data hsel_mpp = {
-		.type	= PM8XXX_MPP_TYPE_D_OUTPUT,
-		.level	= PM8921_MPP_DIG_LEVEL_S4,
-	};
-
-	if (rwtype == GPIOWRITE) {
-		if (wvalue) {
-			
-			hsel_mpp.control = PM8XXX_MPP_DOUT_CTRL_HIGH;
-			ret = pm8xxx_mpp_config(PM8921_MPP_PM_TO_SYS(8),
-								&hsel_mpp);
-			if (ret < 0)
-				pr_err("%s:MPP8 configuration failed\n", __func__);
-		} else {
-			
-			hsel_mpp.control = PM8XXX_MPP_DOUT_CTRL_LOW;
-			ret = pm8xxx_mpp_config(PM8921_MPP_PM_TO_SYS(8),
-								&hsel_mpp);
-			if (ret < 0)
-				pr_err("%s:MPP8 un config failed\n", __func__);
-		}
-	}
-}
-
-static void deluxe_ub1_felica_suspend(void)
-{
-
-	return;
-}
-
-static void deluxe_ub1_felica_resume(void)
-{
-
-	return;
-}
-
-
-static void deluxe_ub1_felica_setup_gpio(void)
-{
-	return;
-}
-
-static struct felica_platform_data deluxe_ub1_felica_data = {
-	.int_irq = PM8921_GPIO_IRQ(PM8921_IRQ_BASE, FEL_INT),
-	.int_gpio = PM8921_GPIO_PM_TO_SYS(FEL_INT),
-	.intu_irq = PM8921_GPIO_IRQ(PM8921_IRQ_BASE, FEL_INTU),
-	.intu_gpio = PM8921_GPIO_PM_TO_SYS(FEL_INTU),
-	.setup_gpio = deluxe_ub1_felica_setup_gpio,
-	.sleep_gpio = deluxe_ub1_felica_suspend,
-	.wakeup_gpio = deluxe_ub1_felica_resume,
-	.pon_gpio_func = deluxe_ub1_felica_pon_gpio_func,
-	.cen_dtyp_d_func = deluxe_ub1_felica_cen_dtyp_d_func,
-	.cen_dtyp_cp_func = deluxe_ub1_felica_cen_dtyp_cp_func,
-	.cen_gpio_func = deluxe_ub1_felica_cen_gpio_func,
-	.rfs_gpio_func = deluxe_ub1_felica_rfs_gpio_func,
-	.int_gpio_func = deluxe_ub1_felica_int_gpio_func,
-	.con_gpio_func = deluxe_ub1_felica_con_gpio_func,
-	.hsel_gpio_func = deluxe_ub1_felica_hsel_gpio_func,
-};
-
-static struct platform_device deluxe_ub1_felica_device = {
-	.name = "felica",
-	.id = 0,
-	.dev		= {
-		.platform_data	= &deluxe_ub1_felica_data,
-	},
-};
-
-int __init deluxe_ub1_init_felica(void)
-{
-	printk(KERN_INFO "[FELICA_DD] %s\n", __func__);
-	return platform_device_register(&deluxe_ub1_felica_device);
-}
-#endif
 
 #define TABLA_INTERRUPT_BASE (NR_MSM_IRQS + NR_GPIO_IRQS + NR_PM8921_IRQS)
 
@@ -2415,6 +2129,7 @@ static struct synaptics_i2c_rmi_platform_data syn_ts_3k_data[] = {
 		.psensor_detection = 1,
 		.tw_pin_mask = 0x0080,
 		.reduce_report_level = {60, 60, 50, 0, 0},
+		.block_touch_time_near = 200,
 		.config = {0x33, 0x32, 0x00, 0x07, 0x00, 0x7F, 0x03, 0x1E,
 			0x05, 0x09, 0x00, 0x01, 0x01, 0x00, 0x10, 0x54,
 			0x06, 0x40, 0x0B, 0x02, 0x14, 0x1E, 0x05, 0x50,
@@ -2476,6 +2191,7 @@ static struct synaptics_i2c_rmi_platform_data syn_ts_3k_data[] = {
 		.tw_pin_mask = 0x0080,
 		.PixelTouchThreshold_bef_unlock = 208,
 		.reduce_report_level = {60, 60, 50, 0, 0},
+		.block_touch_time_near = 200,
 		.config = {0x33, 0x32, 0x00, 0x05, 0x00, 0x7F, 0x03, 0x1E,
 			0x05, 0x09, 0x00, 0x01, 0x01, 0x00, 0x10, 0x54,
 			0x06, 0x40, 0x0B, 0x02, 0x14, 0x1E, 0x05, 0x50,
@@ -2536,6 +2252,7 @@ static struct synaptics_i2c_rmi_platform_data syn_ts_3k_data[] = {
 		.large_obj_check = 1,
 		.tw_pin_mask = 0x0080,
 		.reduce_report_level = {60, 60, 50, 0, 0},
+		.block_touch_time_near = 200,
 		.config = {0x33, 0x32, 0x00, 0x03, 0x04, 0x7F, 0x03, 0x1E,
 			0x05, 0x09, 0x00, 0x01, 0x01, 0x00, 0x10, 0x54,
 			0x06, 0x40, 0x0B, 0x02, 0x14, 0x23, 0x05, 0x50,
@@ -2774,12 +2491,14 @@ static struct cm3629_platform_data cm36282_pdata = {
 	.ps_select = CM3629_PS1_ONLY,
 	.intr = PM8921_GPIO_PM_TO_SYS(PROXIMITY_INT),
 	.levels = { 1, 3, 33, 929, 1440, 5614, 8553, 12415, 16278, 65535},
+	.correction = {100, 400, 900, 1600, 2500, 3600, 4900, 6400, 8100, 10000},
         .golden_adc = 0x1900,
 	.power = NULL,
 	.cm3629_slave_address = 0xC0>>1,
 	.ps1_thd_set = 0x15,
 	.ps1_thd_no_cal = 0xF1,
 	.ps1_thd_with_cal = 0xD,
+	.ps_th_add = 10,
 	.ps_calibration_rule = 1,
 	.ps_conf1_val = CM3629_PS_DR_1_80 | CM3629_PS_IT_1_6T |
 			CM3629_PS1_PERS_3,
@@ -3181,7 +2900,7 @@ static struct msm_rpmrs_level msm_rpmrs_levels[] = {
 		MSM_PM_SLEEP_MODE_POWER_COLLAPSE,
 		MSM_RPMRS_LIMITS(ON, GDHS, MAX, ACTIVE),
 		false,
-		2000, 138, 1208400, 9152,
+		2000, 138, 1208400, 3352,
 	},
 
 	{
@@ -3815,8 +3534,6 @@ static int hdmi_core_power(int on, int show)
 }
 #endif 
 
-
-
 static struct regulator *reg_8921_l16;
 static DEFINE_MUTEX(vib_lock);
 
@@ -3870,13 +3587,13 @@ static struct pm8xxx_vibrator_pwm_platform_data pm8xxx_vib_pwm_pdata = {
     .ena_gpio = PM8921_GPIO_PM_TO_SYS(HAPTIC_EN),
     .set_vdd_power = haptic_set_vdd,
 };
+
 static struct platform_device vibrator_pwm_device = {
     .name = PM8XXX_VIBRATOR_PWM_DEV_NAME,
     .dev = {
 		.platform_data  = &pm8xxx_vib_pwm_pdata,
 	},
 };
-
 
 static struct ramdump_platform_data ramdump_data_2G = {
 	.count = 1,
@@ -4037,9 +3754,6 @@ static struct platform_device *common_devices[] __initdata = {
 #ifdef CONFIG_PERFLOCK
 	&msm8064_device_perf_lock,
 #endif
-#if defined(CONFIG_TSIF) || defined(CONFIG_TSIF_MODULE)
-	&msm_device_tsif[1],
-#endif 
 	&apq_compr_dsp,
 	&apq_multi_ch_pcm,
 };
@@ -4101,19 +3815,19 @@ static struct slim_boardinfo deluxe_ub1_slim_devices[] = {
 };
 
 static struct msm_i2c_platform_data deluxe_ub1_i2c_qup_gsbi1_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 100000,
 	.src_clk_rate = 24000000,
 };
 
 static struct msm_i2c_platform_data apq8064_i2c_qup_gsbi2_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 375000,
 	.src_clk_rate = 24000000,
 	
 };
 
 
 static struct msm_i2c_platform_data deluxe_ub1_i2c_qup_gsbi3_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 384000,
 	.src_clk_rate = 24000000,
 	
 #ifdef CONFIG_SERIAL_IRDA
@@ -4122,7 +3836,7 @@ static struct msm_i2c_platform_data deluxe_ub1_i2c_qup_gsbi3_pdata = {
 };
 
 static struct msm_i2c_platform_data deluxe_ub1_i2c_qup_gsbi4_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 384000,
 	.src_clk_rate = 24000000,
 #ifdef CONFIG_GSBI4_UARTDM
 	.share_uart_flag = 1,
@@ -4790,10 +4504,6 @@ static void __init deluxe_ub1_common_init(void)
 			}
 	}
 
-#ifdef CONFIG_FELICA_CXD2235_DD
-	deluxe_ub1_init_felica();
-#endif
-
 	headset_device_register();
 	deluxe_ub1_init_keypad();
 #ifdef CONFIG_VIDEO_NMI
@@ -4806,7 +4516,6 @@ static void __init deluxe_ub1_common_init(void)
 		htc_monitor_init();
 		htc_pm_monitor_init();
 	}
-
 }
 
 unsigned long ion_kgsl_heap_vaddr = 0;
@@ -4849,8 +4558,6 @@ static void __init deluxe_ub1_cdp_init(void)
 #ifdef CONFIG_MSM_CAMERA
 	deluxe_ub1_init_cam();
 #endif
-	
-	
 	if (!(board_mfg_mode() == 6 || board_mfg_mode() == 7))
 		deluxe_ub1_add_usb_devices();
 }
@@ -4891,7 +4598,7 @@ static void __init deluxe_ub1_fixup(struct tag *tags, char **cmdline, struct mem
 	}
 }
 
-MACHINE_START(DELUXE_UB1, "UNKNOWN")
+MACHINE_START(DELUXE_UB1, "HTC DELUXE_UB1")
 	.fixup = deluxe_ub1_fixup,
 	.map_io = deluxe_ub1_map_io,
 	.reserve = deluxe_ub1_reserve,
@@ -4903,5 +4610,3 @@ MACHINE_START(DELUXE_UB1, "UNKNOWN")
 	.init_very_early = deluxe_ub1_early_reserve,
 	.restart = msm_restart,
 MACHINE_END
-
-
