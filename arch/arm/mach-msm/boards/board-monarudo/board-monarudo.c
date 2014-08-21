@@ -4308,25 +4308,25 @@ static struct slim_boardinfo monarudo_slim_devices[] = {
 };
 
 static struct msm_i2c_platform_data monarudo_i2c_qup_gsbi1_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 100000,
 	.src_clk_rate = 24000000,
 };
 
 static struct msm_i2c_platform_data apq8064_i2c_qup_gsbi2_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 375000,
 	.src_clk_rate = 24000000,
 	
 };
 
 
 static struct msm_i2c_platform_data monarudo_i2c_qup_gsbi3_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 384000,
 	.src_clk_rate = 24000000,
 	
 };
 
 static struct msm_i2c_platform_data monarudo_i2c_qup_gsbi4_pdata = {
-	.clk_freq = 400000,
+	.clk_freq = 384000,
 	.src_clk_rate = 24000000,
 };
 
@@ -5001,8 +5001,6 @@ static void __init monarudo_cdp_init(void)
 
 #define DDR_1GB_SIZE      (1024 * 1024 * 1024)
 
-
-
 static void __init monarudo_fixup(struct tag *tags, char **cmdline, struct meminfo *mi)
 {
 	mem_size_mb = parse_tag_memsize((const struct tag *)tags);
@@ -5028,7 +5026,7 @@ static void __init monarudo_fixup(struct tag *tags, char **cmdline, struct memin
 	}
 }
 
-MACHINE_START(MONARUDO, "UNKNOWN")
+MACHINE_START(MONARUDO, "HTC_DLX")
 	.fixup = monarudo_fixup,
 	.map_io = monarudo_map_io,
 	.reserve = monarudo_reserve,
@@ -5040,4 +5038,3 @@ MACHINE_START(MONARUDO, "UNKNOWN")
 	.init_very_early = monarudo_early_reserve,
 	.restart = msm_restart,
 MACHINE_END
-
