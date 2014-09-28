@@ -175,7 +175,7 @@ __v7_ca15mp_setup:
 __v7_setup:
 	adr	r12, __v7_setup_stack		@ the local stack
 	stmia	r12, {r0-r5, r7, r9, r11, lr}
-	bl      v7_flush_dcache_louis
+	bl	v7_flush_dcache_all
 	ldmia	r12, {r0-r5, r7, r9, r11, lr}
 
 	mrc	p15, 0, r0, c0, c0, 0		@ read main ID register
@@ -391,16 +391,6 @@ __v7_ca15mp_proc_info:
 	.long	0xff0ffff0
 	__v7_proc __v7_ca15mp_setup, hwcaps = HWCAP_IDIV
 	.size	__v7_ca15mp_proc_info, . - __v7_ca15mp_proc_info
-
- 	/*
-	 * Qualcomm Inc. Krait processors.
-	 */
-	.type	__krait_proc_info, #object
-__krait_proc_info:
-	.long	0x510f0400		@ Required ID value
-	.long	0xff0ffc00		@ Mask for ID
-	__v7_proc __v7_setup, hwcaps = HWCAP_IDIV
-	.size	__krait_proc_info, . - __krait_proc_info
 
 	/*
 	 * Match any ARMv7 processor core.

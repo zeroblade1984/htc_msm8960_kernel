@@ -246,13 +246,10 @@ static int gic_suspend(void)
 	return 0;
 }
 
-#ifdef CONFIG_MSM_SHOW_RESUME_IRQ
 extern int msm_show_resume_irq_mask;
-#endif
 
 static void gic_show_resume_irq(struct gic_chip_data *gic)
 {
-#ifdef CONFIG_MSM_SHOW_RESUME_IRQ
 	unsigned int i;
 	u32 enabled;
 	unsigned long pending[32];
@@ -281,7 +278,6 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 		}
 #endif
 	}
-#endif
 }
 
 static void gic_resume_one(struct gic_chip_data *gic)

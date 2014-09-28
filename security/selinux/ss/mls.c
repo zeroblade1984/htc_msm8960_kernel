@@ -146,6 +146,8 @@ void mls_sid_to_context(struct context *context,
 int mls_level_isvalid(struct policydb *p, struct mls_level *l)
 {
 	struct level_datum *levdatum;
+	struct ebitmap_node *node;
+	int i;
 
 	if (!l->sens || l->sens > p->p_levels.nprim)
 		return 0;
@@ -154,8 +156,15 @@ int mls_level_isvalid(struct policydb *p, struct mls_level *l)
 	if (!levdatum)
 		return 0;
 
-	return ebitmap_contains(&levdatum->level->cat, &l->cat,
-				p->p_cats.nprim);
+	ebitmap_for_each_positive_bit(&l->cat, node, i) {
+		if (i > p->p_cats.nprim)
+			return 0;
+		if (!ebitmap_get_bit(&levdatum->level->cat, i)) {
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 int mls_range_isvalid(struct policydb *p, struct mls_range *r)

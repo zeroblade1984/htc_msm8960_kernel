@@ -40,19 +40,6 @@
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/swap.h>
-#include <linux/memory.h>
-#include <linux/memory_hotplug.h>
-
-#define ENHANCED_LMK_ROUTINE
-#define LMK_COUNT_READ
-
-#ifdef ENHANCED_LMK_ROUTINE
-#define LOWMEM_DEATHPENDING_DEPTH 3
-#endif
-
-#ifdef LMK_COUNT_READ
-static uint32_t lmk_count = 0;
-#endif
 
 #ifdef CONFIG_HIGHMEM
 	#define _ZONE ZONE_HIGHMEM
@@ -62,7 +49,7 @@ static uint32_t lmk_count = 0;
 
 
 extern void show_meminfo(void);
-static uint32_t lowmem_debug_level = 1;
+static uint32_t lowmem_debug_level = 2;
 static int lowmem_adj[6] = {
 	0,
 	1,
@@ -103,16 +90,16 @@ static uint32_t lowmem_only_kswapd_sleep = 1;
 
 static int test_task_flag(struct task_struct *p, int flag)
 {
-	struct task_struct *t;
+	struct task_struct *t = p;
 
-	for_each_thread(p,t) {
+	do {
 		task_lock(t);
 		if (test_tsk_thread_flag(t, flag)) {
 			task_unlock(t);
 			return 1;
 		}
 		task_unlock(t);
-	}
+	} while_each_thread(p, t);
 
 	return 0;
 }
@@ -132,7 +119,6 @@ task_fork_notify_func(struct notifier_block *self, unsigned long val, void *data
 	return NOTIFY_OK;
 }
 
-#ifndef ENHANCED_LMK_ROUTINE 
 static void dump_tasks(void)
 {
 	struct task_struct *p;
@@ -152,38 +138,20 @@ static void dump_tasks(void)
 		task_unlock(task);
 	}
 }
-#endif
 
 static DEFINE_MUTEX(scan_mutex);
-
-#ifdef CONFIG_ANDROID_LMK_ADJ_RBTREE
-static struct task_struct *pick_next_from_adj_tree(struct task_struct *task);
-static struct task_struct *pick_first_task(void);
-static struct task_struct *pick_last_task(void);
-#endif
 
 static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
-#ifdef ENHANCED_LMK_ROUTINE
-	struct task_struct *selected[LOWMEM_DEATHPENDING_DEPTH] = {NULL,};
-#else
 	struct task_struct *selected = NULL;
-#endif
 	int rem = 0;
 	int tasksize;
 	int i;
 	int min_score_adj = OOM_SCORE_ADJ_MAX + 1;
-#ifdef ENHANCED_LMK_ROUTINE
-	int selected_tasksize[LOWMEM_DEATHPENDING_DEPTH] = {0,};
-	int selected_oom_score_adj[LOWMEM_DEATHPENDING_DEPTH] = {OOM_ADJUST_MAX,};
-	int all_selected_oom = 0;
-	int max_selected_oom_idx = 0;
-#else
 	int selected_tasksize = 0;
 	int selected_oom_score_adj;
 	int selected_oom_adj = 0;
-#endif
 	int array_size = ARRAY_SIZE(lowmem_adj);
 	int other_free;
 	int other_file;
@@ -255,28 +223,12 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 
 		return rem;
 	}
-
-#ifdef ENHANCED_LMK_ROUTINE
-	for (i = 0; i < LOWMEM_DEATHPENDING_DEPTH; i++)
-		selected_oom_score_adj[i] = min_score_adj;
-#else
 	selected_oom_score_adj = min_score_adj;
-#endif
 
 	rcu_read_lock();
-
-#ifdef CONFIG_ANDROID_LMK_ADJ_RBTREE
-	for (tsk = pick_first_task();
-		tsk != pick_last_task();
-		tsk = pick_next_from_adj_tree(tsk)) {
-#else
 	for_each_process(tsk) {
-#endif
 		struct task_struct *p;
 		int oom_score_adj;
-#ifdef ENHANCED_LMK_ROUTINE
-		int is_exist_oom_task = 0;
-#endif
 
 		if (tsk->flags & PF_KTHREAD)
 			continue;
@@ -301,62 +253,16 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 
 		oom_score_adj = p->signal->oom_score_adj;
 		if (oom_score_adj < min_score_adj) {
-#ifdef CONFIG_ANDROID_LMK_ADJ_RBTREE
 			task_unlock(p);
-#else
 			continue;
-#endif
 		}
 		tasksize = get_mm_rss(p->mm);
 		task_unlock(p);
 		if (tasksize <= 0)
 			continue;
-
-#ifdef ENHANCED_LMK_ROUTINE
-		if (all_selected_oom < LOWMEM_DEATHPENDING_DEPTH) {
-			for (i = 0; i < LOWMEM_DEATHPENDING_DEPTH; i++) {
-				if (!selected[i]) {
-					is_exist_oom_task = 1;
-					max_selected_oom_idx = i;
-					break;
-				}
-			}
-		} else if (selected_oom_score_adj[max_selected_oom_idx] < oom_score_adj ||
-			(selected_oom_score_adj[max_selected_oom_idx] == oom_score_adj &&
-			selected_tasksize[max_selected_oom_idx] < tasksize)) {
-			is_exist_oom_task = 1;
-		}
-
-		if (is_exist_oom_task) {
-			selected[max_selected_oom_idx] = p;
-			selected_tasksize[max_selected_oom_idx] = tasksize;
-			selected_oom_score_adj[max_selected_oom_idx] = oom_score_adj;
-
-			if (all_selected_oom < LOWMEM_DEATHPENDING_DEPTH)
-				all_selected_oom++;
-
-			if (all_selected_oom == LOWMEM_DEATHPENDING_DEPTH) {
-				for (i = 0; i < LOWMEM_DEATHPENDING_DEPTH; i++) {
-					if (selected_oom_score_adj[i] < selected_oom_score_adj[max_selected_oom_idx])
-						max_selected_oom_idx = i;
-					else if (selected_oom_score_adj[i] == selected_oom_score_adj[max_selected_oom_idx] &&
-						selected_tasksize[i] < selected_tasksize[max_selected_oom_idx])
-						max_selected_oom_idx = i;
-				}
-			}
-
-			lowmem_print(2, "select %d (%s), adj %d, \
-					size %d, to kill\n",
-				p->pid, p->comm, oom_score_adj, tasksize);
-		}
-#else
 		if (selected) {
 			if (oom_score_adj < selected_oom_score_adj)
-#ifdef CONFIG_ANDROID_LMK_ADJ_RBTREE
-				break;
-#else
 				continue;
-#endif
 			if (oom_score_adj == selected_oom_score_adj &&
 			    tasksize <= selected_tasksize)
 				continue;
@@ -367,27 +273,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		selected_oom_adj = p->signal->oom_adj;
 		lowmem_print(2, "select %d (%s), oom_adj %d score_adj %d, size %d, to kill\n",
 			     p->pid, p->comm, selected_oom_adj, oom_score_adj, tasksize);
-#endif
 	}
-
-#ifdef ENHANCED_LMK_ROUTINE
-	for (i = 0; i < LOWMEM_DEATHPENDING_DEPTH; i++) {
-		if (selected[i]) {
-			lowmem_print(1, "send sigkill to %d (%s), adj %d,\
-				     size %d\n",
-				     selected[i]->pid, selected[i]->comm,
-				     selected_oom_score_adj[i],
-				     selected_tasksize[i]);
-			lowmem_deathpending_timeout = jiffies + HZ;
-			send_sig(SIGKILL, selected[i], 0);
-			set_tsk_thread_flag(selected[i], TIF_MEMDIE);
-			rem -= selected_tasksize[i];
-#ifdef LMK_COUNT_READ
-			lmk_count++;
-#endif
-		}
-	}
-#else
 	if (selected) {
 		lowmem_print(1, "[%s] send sigkill to %d (%s), oom_adj %d, score_adj %d,"
 			" min_score_adj %d, size %dK, free %dK, file %dK, fork_boost %dK,"
@@ -405,9 +291,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		send_sig(SIGKILL, selected, 0);
 		set_tsk_thread_flag(selected, TIF_MEMDIE);
 		rem -= selected_tasksize;
-#ifdef LMK_COUNT_READ
-		lmk_count++;
-#endif
 		rcu_read_unlock();
 		
 		if (!(lowmem_only_kswapd_sleep && !current_is_kswapd())) {
@@ -416,7 +299,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	}
 	else
 		rcu_read_unlock();
-#endif
+
 	lowmem_print(4, "lowmem_shrink %lu, %x, return %d\n",
 		     sc->nr_to_scan, sc->gfp_mask, rem);
 	mutex_unlock(&scan_mutex);
@@ -518,85 +401,6 @@ static const struct kparam_array __param_arr_adj = {
 };
 #endif
 
-#ifdef CONFIG_ANDROID_LMK_ADJ_RBTREE
-DEFINE_SPINLOCK(lmk_lock);
-struct rb_root tasks_scoreadj = RB_ROOT;
-void add_2_adj_tree(struct task_struct *task)
-{
-	struct rb_node **link = &tasks_scoreadj.rb_node;
-	struct rb_node *parent = NULL;
-	struct task_struct *task_entry;
-	s64 key = task->signal->oom_score_adj;
-	/*
-	 * Find the right place in the rbtree:
-	 */
-	spin_lock(&lmk_lock);
-	while (*link) {
-		parent = *link;
-		task_entry = rb_entry(parent, struct task_struct, adj_node);
-
-		if (key < task_entry->signal->oom_score_adj)
-			link = &parent->rb_right;
-		else
-			link = &parent->rb_left;
-	}
-
-	rb_link_node(&task->adj_node, parent, link);
-	rb_insert_color(&task->adj_node, &tasks_scoreadj);
-	spin_unlock(&lmk_lock);
-}
-
-void delete_from_adj_tree(struct task_struct *task)
-{
-	spin_lock(&lmk_lock);
-	rb_erase(&task->adj_node, &tasks_scoreadj);
-	spin_unlock(&lmk_lock);
-}
-
-
-static struct task_struct *pick_next_from_adj_tree(struct task_struct *task)
-{
-	struct rb_node *next;
-
-	spin_lock(&lmk_lock);
-	next = rb_next(&task->adj_node);
-	spin_unlock(&lmk_lock);
-
-	if (!next)
-		return NULL;
-
-	 return rb_entry(next, struct task_struct, adj_node);
-}
-
-static struct task_struct *pick_first_task(void)
-{
-	struct rb_node *left;
-
-	spin_lock(&lmk_lock);
-	left = rb_first(&tasks_scoreadj);
-	spin_unlock(&lmk_lock);
-
-	if (!left)
-		return NULL;
-
-	return rb_entry(left, struct task_struct, adj_node);
-}
-
-static struct task_struct *pick_last_task(void)
-{
-	struct rb_node *right;
-
-	spin_lock(&lmk_lock);
-	right = rb_last(&tasks_scoreadj);
-	spin_unlock(&lmk_lock);
-
-	if (!right)
-		return NULL;
-
-	return rb_entry(right, struct task_struct, adj_node);
-}
-#endif
-
 module_param_named(cost, lowmem_shrinker.seeks, int, S_IRUGO | S_IWUSR);
 #ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER_AUTODETECT_OOM_ADJ_VALUES
 __module_param_call(MODULE_PARAM_PREFIX, adj,
@@ -614,10 +418,6 @@ module_param_named(debug_level, lowmem_debug_level, uint, S_IRUGO | S_IWUSR);
 module_param_named(fork_boost, lowmem_fork_boost, uint, S_IRUGO | S_IWUSR);
 module_param_array_named(fork_boost_minfree, lowmem_fork_boost_minfree, uint,
 			 &lowmem_fork_boost_minfree_size, S_IRUGO | S_IWUSR);
-
-#ifdef LMK_COUNT_READ
-module_param_named(lmkcount, lmk_count, uint, S_IRUGO);
-#endif
 
 module_init(lowmem_init);
 module_exit(lowmem_exit);

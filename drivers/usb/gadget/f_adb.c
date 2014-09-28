@@ -122,9 +122,9 @@ static void adb_ready_callback(void);
 static void adb_closed_callback(void);
 
 static struct adb_dev *_adb_dev;
-
-static struct timer_list adb_read_timer;
-
+#if 0 
+static struct timer_list adb_write_timer;
+#endif
 int board_get_usb_ats(void);
 
 static inline struct adb_dev *func_to_adb(struct usb_function *f)
@@ -277,7 +277,6 @@ fail:
 }
 
 static int bugreport_debug;
-static void adb_read_timeout(void);
 
 static ssize_t adb_read(struct file *fp, char __user *buf,
 				size_t count, loff_t *pos)
@@ -332,15 +331,6 @@ requeue_req:
 	
 	ret = wait_event_interruptible(dev->read_wq, dev->rx_done ||
 				atomic_read(&dev->error));
-	if (bugreport_debug) {
-		if (atomic_read(&dev->error)) {
-			r = -EIO;
-			adb_read_timeout();
-			goto done;
-		}
-		del_timer(&adb_read_timer);
-	}
-
 	if (ret < 0) {
 		if (ret != -ERESTARTSYS)
 		atomic_set(&dev->error, 1);
@@ -370,15 +360,17 @@ done:
 	return r;
 }
 
-#define READ_TIMEOUT_VALUE (jiffies + msecs_to_jiffies(5000))
-static void adb_read_check_timer(unsigned long data)
+#if 0
+#define WRITE_TIMEOUT_VALUE (jiffies + msecs_to_jiffies(5000))
+static void adb_write_check_timer(unsigned long data)
 {
 	struct adb_dev *dev = _adb_dev;
 
-	pr_info("adb_read timeout\n");
+	pr_info("adb_write timeout\n");
 	atomic_set(&dev->error, 1);
-	wake_up(&dev->read_wq);
+	wake_up(&dev->write_wq);
 }
+#endif
 
 static ssize_t adb_write(struct file *fp, const char __user *buf,
 				 size_t count, loff_t *pos)
@@ -401,15 +393,25 @@ static ssize_t adb_write(struct file *fp, const char __user *buf,
 			r = -EIO;
 			break;
 		}
-
+#if 0
+		
 		if (bugreport_debug)
-			mod_timer(&adb_read_timer, READ_TIMEOUT_VALUE);
-
+			mod_timer(&adb_write_timer, WRITE_TIMEOUT_VALUE);
+#endif
 		
 		req = 0;
 		ret = wait_event_interruptible(dev->write_wq,
 			((req = adb_req_get(dev, &dev->tx_idle)) ||
 			 atomic_read(&dev->error)));
+#if 0
+		if (bugreport_debug) {
+			if (atomic_read(&dev->error)) {
+				r = -ETIMEDOUT;
+				break;
+			}
+			del_timer(&adb_write_timer);
+		}
+#endif
 
 		if (ret < 0) {
 			r = ret;
@@ -727,9 +729,9 @@ static int adb_setup(void)
 		if (ret)
 			goto err;
 	}
-
-	setup_timer(&adb_read_timer, adb_read_check_timer, 0);
-
+#if 0
+	setup_timer(&adb_write_timer, adb_write_check_timer, 0);
+#endif
 	return 0;
 
 err:

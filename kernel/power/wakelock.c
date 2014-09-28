@@ -33,7 +33,7 @@ enum {
 	DEBUG_EXPIRE = 1U << 3,
 	DEBUG_WAKE_LOCK = 1U << 4,
 };
-static int debug_mask = 0; //DEBUG_EXIT_SUSPEND | DEBUG_WAKEUP;
+static int debug_mask = DEBUG_EXIT_SUSPEND | DEBUG_WAKEUP;
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 
 #define WAKE_LOCK_TYPE_MASK              (0x0f)
@@ -235,7 +235,7 @@ static void print_active_locks(int type)
 		}
 	}
 }
-#ifdef CONFIG_DEBUG_KERNEL
+
 void htc_print_active_wake_locks(int type)
 {
 	struct wake_lock *lock;
@@ -262,7 +262,7 @@ void htc_print_active_wake_locks(int type)
 	}
 	spin_unlock_irqrestore(&list_lock, irqflags);
 }
-#endif
+
 static long has_wake_lock_locked(int type)
 {
 	struct wake_lock *lock, *n;

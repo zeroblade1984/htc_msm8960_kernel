@@ -224,7 +224,29 @@ ifdef CONFIG_CPU_IDLE
 endif
 
 ifdef CONFIG_BT
-	obj-y += htc_bdaddress.o
+	obj-$(CONFIG_MACH_MONARUDO) += board-monarudo-rfkill.o  htc_bdaddress.o
+	obj-$(CONFIG_MACH_DELUXE_J) += board-deluxe_j-rfkill.o  htc_bdaddress.o
+	obj-$(CONFIG_MACH_DELUXE_UB1) += board-deluxe_ub1-rfkill.o  htc_bdaddress.o
+	obj-$(CONFIG_MACH_DELUXE_U) += board-deluxe_u-rfkill.o  htc_bdaddress.o
+	obj-$(CONFIG_MACH_IMPRESSION_J) += board-impression_j-rfkill.o  htc_bdaddress.o
+	obj-$(CONFIG_MACH_M7_UL) += board-m7-rfkill.o  htc_bdaddress.o htc_4335_wl_reg.o
+	obj-$(CONFIG_MACH_M7_WLS) += board-m7wl-rfkill.o  htc_bdaddress.o htc_4335_wl_reg.o
+	obj-$(CONFIG_MACH_M7_WLV) += board-m7wl-rfkill.o  htc_bdaddress.o htc_4335_wl_reg.o
+	obj-$(CONFIG_MACH_M7_WLJ) += board-m7wl-rfkill.o  htc_bdaddress.o htc_4335_wl_reg.o
+	obj-$(CONFIG_MACH_M7_DCG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_M7_DUG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_M7_DTU) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_M7C_DTU) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_M7C_DUG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_M7C_DWG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_DLP_DTU) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_DLP_DUG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_DLP_DWG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_T6_TL) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_T6_DUG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_T6_DWG) += htc_bdaddress.o
+	obj-$(CONFIG_MACH_DLXP_WL) += board-dlxp_wl-rfkill.o htc_bdaddress.o htc_4335_wl_reg.o
+	obj-$(CONFIG_MACH_DLXP_UL) += board-dlxp_ul-rfkill.o htc_bdaddress.o htc_4335_wl_reg.o
 endif
 
 #ifdef CONFIG_MSM_CAMERA_V4L2
@@ -292,17 +314,97 @@ obj-$(CONFIG_ARCH_APQ8064) += devices-8960.o devices-8064.o devices_htc.o htc_aw
 board-8960-all-objs += board-8960.o board-8960-camera.o board-8960-display.o board-8960-pmic.o board-8960-storage.o board-8960-gpiomux.o
 board-8930-all-objs += board-8930.o board-8930-camera.o board-8930-display.o board-8930-pmic.o board-8930-storage.o board-8930-gpiomux.o devices-8930.o board-8930-gpu.o
 board-8064-all-objs += board-8064.o board-8064-pmic.o board-8064-storage.o board-8064-gpiomux.o board-8064-camera.o board-8064-display.o board-8064-gpu.o
+board-elite-all-objs += board-elite.o board-elite-gpiomux.o devices-8960.o board-8960-storage.o
+board-evita_utl-all-objs += board-evita_utl.o board-evita_utl-gpiomux.o devices-8960.o board-8960-storage.o
+board-k2_cl-all-objs +=  board-k2_cl-pmic.o board-k2_cl-storage.o board-k2_cl-gpiomux.o devices-8930.o
+board-k2_plc_cl-all-objs +=  board-k2_plc_cl-pmic.o board-k2_plc_cl-storage.o board-k2_plc_cl-gpiomux.o devices-8930.o
+board-tc2-all-objs +=  board-tc2-pmic.o board-tc2-storage.o board-tc2-gpiomux.o devices-8930.o
+board-m4-all-objs +=  board-m4-pmic.o board-m4-storage.o board-m4-gpiomux.o devices-8930.o
+board-zip_cl-all-objs +=  board-zip_cl-pmic.o board-zip_cl-storage.o board-zip_cl-gpiomux.o devices-8930.o
+board-k2_u-all-objs +=  board-k2_u-pmic.o board-k2_u-storage.o board-k2_u-gpiomux.o devices-8930.o
+board-k2_ul-all-objs +=  board-k2_ul-pmic.o board-k2_ul-storage.o board-k2_ul-gpiomux.o devices-8930.o
+board-operaul-all-objs +=  board-operaul-pmic.o board-operaul-storage.o board-operaul-gpiomux.o devices-8930.o
 # board-monarudo-all-objs += board-monarudo.o board-monarudo-pmic.o board-monarudo-storage.o board-monarudo-gpiomux.o board-monarudo-display.o board-monarudo-gpu.o board-monarudo-keypad.o board-monarudo-wifi.o
 board-monarudo-all-objs += board-monarudo.o board-monarudo-pmic.o board-monarudo-storage.o board-monarudo-gpiomux.o board-monarudo-display.o board-monarudo-gpu.o board-monarudo-keypad.o board-monarudo-wifi.o  board-monarudo-audio.o
 board-deluxe_j-all-objs += board-deluxe_j.o board-deluxe_j-pmic.o board-deluxe_j-storage.o board-deluxe_j-gpiomux.o board-deluxe_j-keypad.o board-deluxe_j-wifi.o board-deluxe_j-audio.o
+board-deluxe_ub1-all-objs += board-deluxe_ub1.o board-deluxe_ub1-pmic.o board-deluxe_ub1-storage.o board-deluxe_ub1-gpiomux.o board-deluxe_ub1-keypad.o board-deluxe_ub1-wifi.o board-deluxe_ub1-audio.o
+board-deluxe_u-all-objs += board-deluxe_u.o board-deluxe_u-pmic.o board-deluxe_u-storage.o board-deluxe_u-gpiomux.o board-deluxe_u-display.o board-deluxe_u-gpu.o board-deluxe_u-keypad.o board-deluxe_u-wifi.o board-deluxe_u-audio.o
+board-impression_j-all-objs += board-impression_j.o board-impression_j-pmic.o board-impression_j-storage.o board-impression_j-gpiomux.o board-impression_j-keypad.o board-impression_j-wifi.o board-impression_j-audio.o
+board-m7-all-objs += board-m7.o board-m7-pmic.o board-m7-storage.o board-m7-gpiomux.o board-m7-keypad.o board-m7-wifi.o board-m7-audio.o
+board-m7wls-all-objs += board-m7wls.o board-m7wls-pmic.o board-m7wl-storage.o board-m7wl-gpiomux.o board-m7wl-keypad.o board-m7wl-wifi.o board-m7wl-audio.o
+board-m7wlv-all-objs += board-m7wlv.o board-m7wlv-pmic.o board-m7wl-storage.o board-m7wl-gpiomux.o board-m7wl-keypad.o board-m7wl-wifi.o board-m7wl-audio.o
+board-m7wlj-all-objs += board-m7wlj.o board-m7wlj-pmic.o board-m7wlj-storage.o board-m7wlj-gpiomux.o board-m7wlj-keypad.o board-m7wl-wifi.o board-m7wlj-audio.o
+board-m7dcg-all-objs += board-m7dcg.o board-m7dcg-pmic.o board-m7china-storage.o board-m7china-gpiomux.o board-m7dcg-keypad.o board-m7china-wifi.o board-m7china-audio.o board-m7evm-pmic.o board-m7evm.o
+board-m7dug-all-objs += board-m7dug.o board-m7dug-pmic.o board-m7china-storage.o board-m7china-gpiomux.o board-m7dug-keypad.o board-m7china-wifi.o board-m7china-audio.o board-m7evm-pmic.o board-m7evm.o
+board-m7dtu-all-objs += board-m7dtu.o board-m7dtu-pmic.o board-m7china-storage.o board-m7china-gpiomux.o board-m7dtu-keypad.o board-m7china-wifi.o board-m7china-audio.o board-m7evm-pmic.o board-m7evm.o
+board-m7cdtu-all-objs += board-m7cdtu.o board-m7cdtu-pmic.o board-m7china-storage.o board-m7china-gpiomux.o board-m7cdtu-keypad.o board-m7china-wifi.o board-m7china-audio.o board-m7evm-pmic.o board-m7evm.o
+board-m7cdug-all-objs += board-m7cdug.o board-m7cdug-pmic.o board-m7china-storage.o board-m7china-gpiomux.o board-m7cdug-keypad.o board-m7china-wifi.o board-m7china-audio.o board-m7evm-pmic.o board-m7evm.o
+board-m7cdwg-all-objs += board-m7cdwg.o board-m7cdwg-pmic.o board-m7china-storage.o board-m7china-gpiomux.o board-m7cdwg-keypad.o board-m7china-wifi.o board-m7china-audio.o board-m7evm-pmic.o board-m7evm.o
+board-t6tl-all-objs += board-t6tl.o board-t6tl-pmic.o board-t6china-storage.o board-t6china-gpiomux.o board-t6tl-keypad.o board-t6china-wifi.o board-t6china-audio.o
+board-t6dug-all-objs += board-t6dug.o board-t6dug-pmic.o board-t6china-storage.o board-t6china-gpiomux.o board-t6dug-keypad.o board-t6china-wifi.o board-t6china-audio.o
+board-t6dwg-all-objs += board-t6dwg.o board-t6dwg-pmic.o board-t6china-storage.o board-t6china-gpiomux.o board-t6dwg-keypad.o board-t6china-wifi.o board-t6china-audio.o
+board-dlxp_wl-all-objs += board-dlxp_wl.o board-dlxp_wl-pmic.o board-dlxp_wl-storage.o board-dlxp_wl-gpiomux.o board-dlxp_wl-display.o board-dlxp_wl-gpu.o board-dlxp_wl-keypad.o board-dlxp_wl-wifi.o  board-dlxp_wl-audio.o
+board-dlxp_ul-all-objs += board-dlxp_ul.o board-dlxp_ul-pmic.o board-dlxp_ul-storage.o board-dlxp_ul-gpiomux.o board-dlxp_ul-display.o board-dlxp_ul-gpu.o board-dlxp_ul-keypad.o board-dlxp_ul-wifi.o  board-dlxp_ul-audio.o
+board-dlp_dtu-all-objs += board-dlp_dtu.o board-dlp_dtu-pmic.o board-dlp_china-storage.o board-dlp_china-gpiomux.o board-dlp_dtu-keypad.o board-m7china-wifi.o board-dlp_china-audio.o
+board-dlp_dug-all-objs += board-dlp_dug.o board-dlp_dug-pmic.o board-dlp_china-storage.o board-dlp_china-gpiomux.o board-dlp_dug-keypad.o board-m7china-wifi.o board-dlp_china-audio.o
+board-dlp_dwg-all-objs += board-dlp_dwg.o board-dlp_dwg-pmic.o board-dlp_china-storage.o board-dlp_china-gpiomux.o board-dlp_dwg-keypad.o board-m7china-wifi.o board-dlp_china-audio.o
 
 ifdef CONFIG_FB_MSM
 board-deluxe_j-all-objs += board-deluxe_j-display.o board-deluxe_j-gpu.o
+board-deluxe_ub1-all-objs += board-deluxe_ub1-display.o board-deluxe_ub1-gpu.o
+board-impression_j-all-objs += board-impression_j-display.o board-impression_j-gpu.o
+board-m7-all-objs += board-m7-display.o board-m7-gpu.o
+board-m7wls-all-objs += board-m7wl-display.o board-m7wl-gpu.o
+board-m7wlv-all-objs += board-m7wl-display.o board-m7wl-gpu.o
+board-m7wlj-all-objs += board-m7wl-display.o board-m7wl-gpu.o
+board-m7dcg-all-objs += board-m7china-display.o board-m7china-gpu.o
+board-m7dug-all-objs += board-m7china-display.o board-m7china-gpu.o
+board-m7dtu-all-objs += board-m7china-display.o board-m7china-gpu.o
+board-m7cdtu-all-objs += board-m7china-display.o board-m7china-gpu.o
+board-m7cdug-all-objs += board-m7china-display.o board-m7china-gpu.o
+board-m7cdwg-all-objs += board-m7china-display.o board-m7china-gpu.o
+board-t6tl-all-objs += board-t6china-display.o board-t6china-gpu.o
+board-t6dug-all-objs += board-t6china-display.o board-t6china-gpu.o
+board-t6dwg-all-objs += board-t6china-display.o board-t6china-gpu.o
+board-dlxp_wl-all-objs += board-dlxp_wl-display.o board-dlxp_wl-gpu.o
+board-dlxp_ul-all-objs += board-dlxp_ul-display.o board-dlxp_ul-gpu.o
+board-dlp_dtu-all-objs += board-dlp_china-display.o board-dlp_china-gpu.o
+board-dlp_dug-all-objs += board-dlp_china-display.o board-dlp_china-gpu.o
+board-dlp_dwg-all-objs += board-dlp_china-display.o board-dlp_china-gpu.o
+board-operaul-all-objs += board-operaul-display.o board-operaul-gpu.o
+board-tc2-all-objs += board-tc2-display.o board-tc2-gpu.o
+board-m4-all-objs += board-m4-display.o board-m4-gpu.o
+board-zip_cl-all-objs += board-zip_cl-display.o board-zip_cl-gpu.o
+board-k2_cl-all-objs += board-k2-display.o board-k2-gpu.o
+board-k2_plc_cl-all-objs += board-k2-display.o board-k2-gpu.o
+board-k2_u-all-objs += board-k2-display.o board-k2-gpu.o
+board-k2_ul-all-objs += board-k2-display.o board-k2-gpu.o
 endif
 
 ifdef CONFIG_MSM_CAMERA
 board-monarudo-all-objs += board-monarudo-camera.o
 board-deluxe_j-all-objs += board-deluxe_j-camera.o
+board-deluxe_ub1-all-objs += board-deluxe_ub1-camera.o
+board-deluxe_u-all-objs += board-deluxe_u-camera.o
+board-impression_j-all-objs += board-impression_j-camera.o
+board-m7-all-objs += board-m7-camera.o
+board-m7wls-all-objs += board-m7wl-camera.o
+board-m7wlv-all-objs += board-m7wlv-camera.o
+board-m7wlj-all-objs += board-m7wlj-camera.o
+board-m7dcg-all-objs += board-m7china-camera.o
+board-m7dug-all-objs += board-m7china-camera.o
+board-m7dtu-all-objs += board-m7china-camera.o
+board-m7cdtu-all-objs += board-m7china-camera.o
+board-m7cdug-all-objs += board-m7china-camera.o
+board-m7cdwg-all-objs += board-m7china-camera.o
+board-dlxp_wl-all-objs += board-dlxp_wl-camera.o
+board-dlxp_ul-all-objs += board-dlxp_ul-camera.o
+board-dlp_dtu-all-objs += board-dlp_china-camera.o
+board-dlp_dug-all-objs += board-dlp_china-camera.o
+board-dlp_dwg-all-objs += board-dlp_china-camera.o
+board-t6tl-all-objs += board-t6china-camera.o
+board-t6dug-all-objs += board-t6china-camera.o
+board-t6dwg-all-objs += board-t6china-camera.o
 endif
 obj-$(CONFIG_MACH_MSM8960_SIM) += board-8960-all.o board-8960-regulator.o
 obj-$(CONFIG_MACH_MSM8960_RUMI3) += board-8960-all.o board-8960-regulator.o
@@ -322,9 +424,135 @@ obj-$(CONFIG_MACH_MPQ8064_HRD) += board-8064-all.o board-8064-regulator.o
 obj-$(CONFIG_MACH_MPQ8064_DTV) += board-8064-all.o board-8064-regulator.o
 obj-$(CONFIG_MACH_MONARUDO) += board-monarudo-all.o board-monarudo-regulator.o
 obj-$(CONFIG_MACH_DELUXE_J) += board-deluxe_j-all.o board-deluxe_j-regulator.o
+obj-$(CONFIG_MACH_DELUXE_UB1) += board-deluxe_ub1-all.o board-deluxe_ub1-regulator.o
+obj-$(CONFIG_MACH_DELUXE_U) += board-deluxe_u-all.o board-deluxe_u-regulator.o
+obj-$(CONFIG_MACH_IMPRESSION_J) += board-impression_j-all.o board-impression_j-regulator.o
+obj-$(CONFIG_MACH_M7_UL) += board-m7-all.o board-m7-regulator.o
+obj-$(CONFIG_MACH_M7_WLS) += board-m7wls-all.o board-m7wl-regulator.o
+obj-$(CONFIG_MACH_M7_WLV) += board-m7wlv-all.o board-m7wl-regulator.o
+obj-$(CONFIG_MACH_M7_WLJ) += board-m7wlj-all.o board-m7wlj-regulator.o
+obj-$(CONFIG_MACH_M7_DCG) += board-m7dcg-all.o board-m7china-regulator.o
+obj-$(CONFIG_MACH_M7_DUG) += board-m7dug-all.o board-m7china-regulator.o
+obj-$(CONFIG_MACH_M7_DTU) += board-m7dtu-all.o board-m7china-regulator.o
+obj-$(CONFIG_MACH_M7C_DTU) += board-m7cdtu-all.o board-m7china-regulator.o
+obj-$(CONFIG_MACH_M7C_DUG) += board-m7cdug-all.o board-m7china-regulator.o
+obj-$(CONFIG_MACH_M7C_DWG) += board-m7cdwg-all.o board-m7china-regulator.o
+obj-$(CONFIG_MACH_T6_TL) += board-t6tl-all.o board-t6china-regulator.o
+obj-$(CONFIG_MACH_T6_DUG) += board-t6dug-all.o board-t6china-regulator.o
+obj-$(CONFIG_MACH_T6_DWG) += board-t6dwg-all.o board-t6china-regulator.o
+obj-$(CONFIG_MACH_DLXP_WL) += board-dlxp_wl-all.o board-dlxp_wl-regulator.o
+obj-$(CONFIG_MACH_DLXP_UL) += board-dlxp_ul-all.o board-dlxp_ul-regulator.o
+obj-$(CONFIG_MACH_DLP_DTU) += board-dlp_dtu-all.o board-dlp_china-regulator.o
+obj-$(CONFIG_MACH_DLP_DUG) += board-dlp_dug-all.o board-dlp_china-regulator.o
+obj-$(CONFIG_MACH_DLP_DWG) += board-dlp_dwg-all.o board-dlp_china-regulator.o
 
-obj-y += htc_util.o
+obj-$(CONFIG_MACH_MONARUDO) += htc_util.o
+obj-$(CONFIG_MACH_DELUXE_J) += htc_util.o
+obj-$(CONFIG_MACH_DELUXE_UB1) += htc_util.o
+obj-$(CONFIG_MACH_DELUXE_U) += htc_util.o
+obj-$(CONFIG_MACH_IMPRESSION_J) += htc_util.o
+obj-$(CONFIG_MACH_M7_UL) += htc_util.o
+obj-$(CONFIG_MACH_M7_WLS) += htc_util.o
+obj-$(CONFIG_MACH_M7_WLV) += htc_util.o
+obj-$(CONFIG_MACH_M7_WLJ) += htc_util.o
+obj-$(CONFIG_MACH_M7_DCG) += htc_util.o
+obj-$(CONFIG_MACH_M7_DUG) += htc_util.o
+obj-$(CONFIG_MACH_M7_DTU) += htc_util.o
+obj-$(CONFIG_MACH_M7C_DTU) += htc_util.o
+obj-$(CONFIG_MACH_M7C_DUG) += htc_util.o
+obj-$(CONFIG_MACH_M7C_DWG) += htc_util.o
+obj-$(CONFIG_MACH_T6_TL) += htc_util.o
+obj-$(CONFIG_MACH_T6_DUG) += htc_util.o
+obj-$(CONFIG_MACH_T6_DWG) += htc_util.o
+obj-$(CONFIG_MACH_DLXP_WL) += htc_util.o
+obj-$(CONFIG_MACH_DLXP_UL) += htc_util.o
+obj-$(CONFIG_MACH_DLP_DTU) += htc_util.o
+obj-$(CONFIG_MACH_DLP_DUG) += htc_util.o
+obj-$(CONFIG_MACH_DLP_DWG) += htc_util.o
+obj-$(CONFIG_MACH_ELITE) += board-elite.o board-elite-regulator.o board-elite-gpiomux.o board-elite-storage.o board-elite-audio.o board-elite-camera.o
+obj-$(CONFIG_MACH_ELITE) += board-elite-keypad.o
+obj-$(CONFIG_MACH_ELITE) += htc_bdaddress.o
+obj-$(CONFIG_MACH_ELITE) += htc_util.o
+obj-$(CONFIG_MACH_EVITA_UTL) += board-evita_utl.o board-evita_utl-regulator.o board-evita_utl-gpiomux.o board-evita_utl-storage.o board-evita_utl-audio.o board-evita_utl-camera.o
+obj-$(CONFIG_MACH_EVITA_UTL) += board-evita_utl-keypad.o
+obj-$(CONFIG_MACH_EVITA_UTL) += htc_bdaddress.o
+obj-$(CONFIG_MACH_EVITA_UTL) += htc_util.o
+obj-$(CONFIG_MACH_VILLE) += board-ville.o board-ville-regulator.o board-ville-gpiomux.o board-ville-storage.o board-ville-audio.o board-ville-camera.o
+obj-$(CONFIG_MACH_VILLE) += board-ville-keypad.o
+obj-$(CONFIG_MACH_VILLE) += htc_bdaddress.o
+obj-$(CONFIG_MACH_VILLE) += htc_util.o
+obj-$(CONFIG_MACH_FIGHTER) += board-fighter.o board-fighter-regulator.o board-fighter-gpiomux.o board-fighter-storage.o board-fighter-audio.o board-fighter-camera.o
+obj-$(CONFIG_MACH_FIGHTER) += board-fighter-keypad.o
+obj-$(CONFIG_MACH_FIGHTER) += htc_bdaddress.o
+obj-$(CONFIG_MACH_FIGHTER) += htc_util.o
+obj-$(CONFIG_MACH_JET) += board-jet.o board-jet-regulator.o board-jet-gpiomux.o board-jet-storage.o board-jet-audio.o board-jet-camera.o
+obj-$(CONFIG_MACH_JET) += board-jet-keypad.o
+obj-$(CONFIG_MACH_JET) += htc_bdaddress.o
+obj-$(CONFIG_MACH_JET) += htc_util.o
+obj-$(CONFIG_MACH_JEWEL_DD) += board-jel_dd.o board-jel_dd-regulator.o board-jel_dd-gpiomux.o board-jel_dd-storage.o board-jel_dd-audio.o board-jel_dd-camera.o
+obj-$(CONFIG_MACH_JEWEL_DD) += board-jel_dd-keypad.o board-jel_dd-gsm-radio.o
+obj-$(CONFIG_MACH_JEWEL_DD) += htc_bdaddress.o
+obj-$(CONFIG_MACH_JEWEL_DD) += htc_util.o
+obj-$(CONFIG_MACH_VALENTE_WX) += board-valente_wx.o board-valente_wx-regulator.o board-valente_wx-gpiomux.o board-valente_wx-storage.o board-valente_wx-audio.o board-valente_wx-camera.o
+obj-$(CONFIG_MACH_VALENTE_WX) += board-valente_wx-keypad.o
+obj-$(CONFIG_MACH_VALENTE_WX) += htc_bdaddress.o
+obj-$(CONFIG_MACH_VALENTE_WX) += htc_util.o
+obj-$(CONFIG_MACH_VALENTE_WX_C9) += board-valente_wx_c9.o board-valente_wx_c9-regulator.o board-valente_wx_c9-gpiomux.o board-valente_wx_c9-storage.o board-valente_wx_c9-audio.o board-valente_wx_c9-camera.o
+obj-$(CONFIG_MACH_VALENTE_WX_C9) += board-valente_wx_c9-keypad.o
+obj-$(CONFIG_MACH_VALENTE_WX_C9) += htc_bdaddress.o
+obj-$(CONFIG_MACH_VALENTE_WX_C9) += htc_util.o
 
+obj-$(CONFIG_MACH_K2_U) += board-k2_u.o board-k2_u-all.o board-k2_u-regulator.o board-k2_ul-audio.o
+obj-$(CONFIG_MACH_K2_U) += htc_bdaddress.o board-k2_u-rfkill.o htc_sleep_clk.o htc_util.o board-k2-camera.o
+#obj-$(CONFIG_MACH_K2_U) += htc_acoustic.o
+obj-$(CONFIG_MACH_K2_U) += board-k2_u-keypad.o
+obj-$(CONFIG_MACH_K2_U) += board-k2_u-mmc.o board-k2_u-wifi.o htc_wifi_nvs.o
+
+obj-$(CONFIG_MACH_TC2) += board-tc2.o board-tc2-all.o board-tc2-regulator.o board-tc2-audio.o
+obj-$(CONFIG_MACH_TC2) += htc_bdaddress.o board-tc2-rfkill.o htc_sleep_clk.o htc_util.o board-tc2-camera.o
+#obj-$(CONFIG_MACH_TC2) += htc_acoustic.o
+obj-$(CONFIG_MACH_TC2) += board-tc2-keypad.o
+obj-$(CONFIG_MACH_TC2) += board-tc2-mmc.o board-tc2-wifi.o htc_wifi_nvs.o
+
+
+
+
+
+obj-$(CONFIG_MACH_M4_UL) += board-m4.o board-m4-all.o board-m4-regulator.o board-m4-audio.o
+obj-$(CONFIG_MACH_M4_UL) += htc_bdaddress.o board-m4-rfkill.o htc_sleep_clk.o htc_util.o board-m4-camera.o
+#obj-$(CONFIG_MACH_M4_UL) += htc_acoustic.o
+obj-$(CONFIG_MACH_M4_UL) += board-m4-keypad.o
+obj-$(CONFIG_MACH_M4_UL) += board-m4-mmc.o board-m4-wifi.o htc_wifi_nvs.o
+
+obj-$(CONFIG_MACH_ZIP_CL) += board-zip_cl.o board-zip_cl-all.o board-zip_cl-regulator.o board-zip_cl-audio.o
+obj-$(CONFIG_MACH_ZIP_CL) += htc_bdaddress.o board-zip_cl-rfkill.o htc_sleep_clk.o htc_util.o board-zip_cl-camera.o
+#obj-$(CONFIG_MACH_ZIP_CL) += htc_acoustic.o
+obj-$(CONFIG_MACH_ZIP_CL) += board-zip_cl-keypad.o
+obj-$(CONFIG_MACH_ZIP_CL) += board-zip_cl-mmc.o board-zip_cl-wifi.o htc_wifi_nvs.o
+
+obj-$(CONFIG_MACH_K2_CL) += board-k2_cl.o board-k2_cl-all.o board-k2_cl-regulator.o board-k2_cl-audio.o
+obj-$(CONFIG_MACH_K2_CL) += htc_bdaddress.o board-k2_cl-rfkill.o htc_sleep_clk.o htc_util.o board-k2-camera.o
+#obj-$(CONFIG_MACH_K2_CL) += htc_acoustic.o
+obj-$(CONFIG_MACH_K2_CL) += board-k2_cl-keypad.o
+obj-$(CONFIG_MACH_K2_CL) += board-k2_cl-mmc.o board-k2_cl-wifi.o htc_wifi_nvs.o
+
+obj-$(CONFIG_MACH_K2_PLC_CL) += board-k2_plc_cl.o board-k2_plc_cl-all.o board-k2_plc_cl-regulator.o board-k2_plc_cl-audio.o
+obj-$(CONFIG_MACH_K2_PLC_CL) += htc_bdaddress.o board-k2_plc_cl-rfkill.o htc_sleep_clk.o htc_util.o board-k2-camera.o
+#obj-$(CONFIG_MACH_K2_PLC_CL) += htc_acoustic.o
+obj-$(CONFIG_MACH_K2_PLC_CL) += board-k2_plc_cl-keypad.o
+obj-$(CONFIG_MACH_K2_PLC_CL) += board-k2_plc_cl-mmc.o board-k2_plc_cl-wifi.o htc_wifi_nvs.o
+
+obj-$(CONFIG_MACH_K2_UL) += board-k2_ul.o board-k2_ul-all.o board-k2_ul-regulator.o board-k2_ul-audio.o
+obj-$(CONFIG_MACH_K2_UL) += htc_bdaddress.o board-k2_ul-rfkill.o htc_sleep_clk.o htc_util.o board-k2-camera.o
+#obj-$(CONFIG_MACH_K2_UL) += htc_acoustic.o
+obj-$(CONFIG_MACH_K2_UL) += board-k2_ul-keypad.o
+obj-$(CONFIG_MACH_K2_UL) += board-k2_ul-mmc.o board-k2_ul-wifi.o htc_wifi_nvs.o
+
+obj-$(CONFIG_MACH_OPERAUL) += board-operaul.o board-operaul-all.o board-operaul-regulator.o board-operaul-audio.o
+obj-$(CONFIG_MACH_OPERAUL) += htc_bdaddress.o board-operaul-rfkill.o htc_sleep_clk.o htc_util.o board-operaul-camera.o
+#obj-$(CONFIG_MACH_OPERAUL) += htc_acoustic.o
+obj-$(CONFIG_MACH_OPERAUL) += board-operaul-keypad.o
+obj-$(CONFIG_MACH_OPERAUL) += board-operaul-mmc.o board-operaul-wifi.o htc_wifi_nvs.o
 obj-$(CONFIG_ARCH_MSM9615) += board-9615.o devices-9615.o board-9615-regulator.o board-9615-gpiomux.o board-9615-storage.o board-9615-display.o
 obj-$(CONFIG_ARCH_MSM9615) += clock-local.o clock-9615.o acpuclock-9615.o clock-rpm.o clock-pll.o
 obj-$(CONFIG_ARCH_MSM8974) += board-8974.o board-dt.o board-8974-regulator.o board-8974-gpiomux.o
@@ -333,7 +561,25 @@ obj-$(CONFIG_ARCH_MSM8974) += clock-local2.o clock-pll.o clock-8974.o clock-rpm.
 obj-$(CONFIG_ARCH_MSM8974) += gdsc.o
 obj-$(CONFIG_ARCH_MSM9625) += board-9625.o board-9625-gpiomux.o
 
-obj-$(CONFIG_MACH_HTC) += boards/
+ifeq ($(CONFIG_WIMAX),y)
+obj-$(CONFIG_MACH_VALENTE_WX) += board-valente_wx-mmc.o  board-common-wimax.o
+obj-$(CONFIG_MACH_VALENTE_WX_C9) += board-valente_wx_c9-mmc.o  board-common-wimax.o
+endif
+
+obj-$(CONFIG_MACH_SAPPHIRE) += board-sapphire.o board-sapphire-gpio.o
+obj-$(CONFIG_MACH_SAPPHIRE) += board-sapphire-keypad.o board-sapphire-panel.o
+obj-$(CONFIG_MACH_SAPPHIRE) += board-sapphire-mmc.o board-sapphire-wifi.o
+obj-$(CONFIG_MACH_SAPPHIRE) += board-sapphire-rfkill.o msm_vibrator.o
+
+obj-$(CONFIG_MACH_VILLEC2) += board-villec2.o devices_htc.o
+obj-$(CONFIG_MACH_VILLEC2) += board-villec2-keypad.o board-villec2-gpiomux.o
+obj-$(CONFIG_MACH_VILLEC2) += board-villec2-camera.o htc_awb_cal.o
+obj-$(CONFIG_MACH_VILLEC2) += htc_bdaddress.o board-villec2-rfkill.o
+# Broadcom 
+obj-$(CONFIG_MACH_VILLEC2) += board-villec2-mmc.o board-villec2-wifi.o htc_wifi_nvs.o 
+#obj-$(CONFIG_MACH_VILLEC2) += board-villec2-mmc.o
+obj-$(CONFIG_MACH_VILLEC2) += htc_util.o
+obj-$(CONFIG_MACH_VILLEC2) += board-villec2-audio.o
 
 CFLAGS_msm_vibrator.o += -Idrivers/staging/android
 CFLAGS_board-9615.o += -Idrivers/usb/gadget
@@ -390,6 +636,7 @@ obj-$(CONFIG_ARCH_APQ8064) += gpiomux-v2.o gpiomux.o
 obj-$(CONFIG_ARCH_MSM9615) += gpiomux-v2.o gpiomux.o
 obj-$(CONFIG_ARCH_MSM8974) += gpiomux-v2.o gpiomux.o
 obj-$(CONFIG_ARCH_MSM9625) += gpiomux-v2.o gpiomux.o
+
 
 obj-$(CONFIG_MSM_SLEEP_STATS) += idle_stats.o
 obj-$(CONFIG_MSM_SLEEP_STATS_DEVICE) += idle_stats_device.o

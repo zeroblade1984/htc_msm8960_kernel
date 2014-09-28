@@ -517,19 +517,7 @@ void wake_up_idle_cpu(int cpu)
 static inline bool got_nohz_idle_kick(void)
 {
 	int cpu = smp_processor_id();
-
-	if (!test_bit(NOHZ_BALANCE_KICK, nohz_flags(cpu)))
-    		return false;
-
-  	if (idle_cpu(cpu) && !need_resched())
-    		return true;
-
-  	/*
-  	 * We can't run Idle Load Balance on this CPU for this time so we
-  	 * cancel it and clear NOHZ_BALANCE_KICK
-  	 */
-  	clear_bit(NOHZ_BALANCE_KICK, nohz_flags(cpu));
-  	return false;
+	return idle_cpu(cpu) && test_bit(NOHZ_BALANCE_KICK, nohz_flags(cpu));
 }
 
 #else 
@@ -1195,7 +1183,7 @@ void scheduler_ipi(void)
 	irq_enter();
 	sched_ttwu_pending();
 
-	if (unlikely(got_nohz_idle_kick())) {
+	if (unlikely(got_nohz_idle_kick() && !need_resched())) {
 		this_rq()->idle_balance = 1;
 		raise_softirq_irqoff(SCHED_SOFTIRQ);
 	}
@@ -3291,15 +3279,6 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	if (!check_same_owner(p) && !ns_capable(task_user_ns(p), CAP_SYS_NICE))
 		goto out_unlock;
 
-#ifdef CONFIG_HOTPLUG_CPU
-	if (!ns_capable(task_user_ns(p), CAP_SYS_NICE)) {
-		/* Silent fail.  No scenario for affinity makes sense
-		 * for unpriviledged users with hotplugged CPU's.
-		 */
-		retval = 0;
-		goto out_unlock;
-	}
-#endif
 	retval = security_task_setscheduler(p);
 	if (retval)
 		goto out_unlock;
@@ -3644,9 +3623,7 @@ static const char stat_nam[] = TASK_STATE_TO_CHAR_STR;
 
 void sched_show_task(struct task_struct *p)
 {
-#ifdef CONFIG_DEBUG_KERNEL
 	unsigned long free = 0;
-#endif
 	unsigned state;
 
 	state = p->state ? __ffs(p->state) + 1 : 0;
@@ -3666,7 +3643,6 @@ void sched_show_task(struct task_struct *p)
 #ifdef CONFIG_DEBUG_STACK_USAGE
 	free = stack_not_used(p);
 #endif
-#ifdef CONFIG_DEBUG_KERNEL
 	printk(KERN_CONT "%5lu %5d %6d 0x%08lx c%d %llu\n", free,
 		task_pid_nr(p), task_pid_nr(rcu_dereference(p->real_parent)),
 		(unsigned long)task_thread_info(p)->flags, p->on_cpu,
@@ -3675,7 +3651,7 @@ void sched_show_task(struct task_struct *p)
 #else
 		(unsigned long long)0);
 #endif
-#endif
+
 #if defined(CONFIG_DEBUG_MUTEXES)
 	if (state == TASK_UNINTERRUPTIBLE)
 		if (p->blocked_by)
@@ -4108,7 +4084,6 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
 
 	case CPU_UP_PREPARE:
 		rq->calc_load_update = calc_load_update;
-		rq->next_balance = jiffies;
 		break;
 
 	case CPU_ONLINE:
@@ -4646,7 +4621,6 @@ static const struct cpumask *cpu_cpu_mask(int cpu)
 	return cpumask_of_node(cpu_to_node(cpu));
 }
 
-/* sched_mc & sched_mt parameter settings */
 int sched_smt_power_savings = 0, sched_mc_power_savings = 0;
 
 struct sd_data {
@@ -5420,6 +5394,9 @@ void __init sched_init_smp(void)
 
 	hotcpu_notifier(cpuset_cpu_active, CPU_PRI_CPUSET_ACTIVE);
 	hotcpu_notifier(cpuset_cpu_inactive, CPU_PRI_CPUSET_INACTIVE);
+
+	
+	hotcpu_notifier(update_runtime, 0);
 
 	init_hrtick();
 

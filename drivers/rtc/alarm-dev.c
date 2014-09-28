@@ -30,7 +30,7 @@
 #define ANDROID_ALARM_PRINT_IO (1U << 1)
 #define ANDROID_ALARM_PRINT_INT (1U << 2)
 
-static int debug_mask = 0; //ANDROID_ALARM_PRINT_INFO;
+static int debug_mask = ANDROID_ALARM_PRINT_INFO;
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 
 #define pr_alarm(debug_level_mask, args...) \
@@ -118,8 +118,8 @@ static long alarm_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		}
 from_old_alarm_set:
 		spin_lock_irqsave(&alarm_slock, flags);
-		//pr_alarm(INFO, "alarm %d set %ld.%09ld\n", alarm_type,
-		//	new_alarm_time.tv_sec, new_alarm_time.tv_nsec);
+		pr_alarm(INFO, "alarm %d set %ld.%09ld\n", alarm_type,
+			new_alarm_time.tv_sec, new_alarm_time.tv_nsec);
 		alarm_enabled |= alarm_type_mask;
 		alarm_start_range(&alarms[alarm_type],
 			timespec_to_ktime(new_alarm_time),

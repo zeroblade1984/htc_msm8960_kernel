@@ -189,7 +189,7 @@ void pm_qos_add_request(struct pm_qos_request *req,
 		return;
 
 	if (pm_qos_request_active(req)) {
-		//WARN(1, KERN_ERR "pm_qos_add_request() called for already added request\n");
+		WARN(1, KERN_ERR "pm_qos_add_request() called for already added request\n");
 		return;
 	}
 	req->pm_qos_class = pm_qos_class;
@@ -206,7 +206,7 @@ void pm_qos_update_request(struct pm_qos_request *req,
 		return;
 
 	if (!pm_qos_request_active(req)) {
-		//WARN(1, KERN_ERR "pm_qos_update_request() called for unknown object\n");
+		WARN(1, KERN_ERR "pm_qos_update_request() called for unknown object\n");
 		return;
 	}
 
@@ -247,7 +247,7 @@ void pm_qos_remove_request(struct pm_qos_request *req)
 		
 
 	if (!pm_qos_request_active(req)) {
-		//WARN(1, KERN_ERR "pm_qos_remove_request() called for unknown object\n");
+		WARN(1, KERN_ERR "pm_qos_remove_request() called for unknown object\n");
 		return;
 	}
 

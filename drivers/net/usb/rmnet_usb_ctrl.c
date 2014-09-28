@@ -854,7 +854,7 @@ static int rmnet_ctl_open(struct inode *inode, struct file *file)
 					__func__, dev->name);
 
 #ifdef HTC_MDM_RESTART_IF_RMNET_OPEN_TIMEOUT
-		if ((dev->claimed) && jiffies_to_msecs(jiffies - dev->connected_jiffies) > RMNET_OPEN_TIMEOUT_MS) {
+		if (jiffies_to_msecs(jiffies - dev->connected_jiffies) > RMNET_OPEN_TIMEOUT_MS) {
 			dev_err(dev->devicep, "%s[%d]:dev->connected_jiffies:%lu jiffies:%lu\n", __func__, __LINE__, dev->connected_jiffies, jiffies);
 			dev_err(dev->devicep, "%s[%d]:htc_ehci_trigger_mdm_restart!!!\n", __func__, __LINE__);
 			htc_ehci_trigger_mdm_restart();

@@ -645,7 +645,7 @@ long wb_do_writeback(struct bdi_writeback *wb, int force_wait)
 		if (force_wait)
 			work->sync_mode = WB_SYNC_ALL;
 
-//		trace_writeback_exec(bdi, work);
+		trace_writeback_exec(bdi, work);
 
 		wrote += wb_writeback(wb, work);
 
@@ -764,7 +764,7 @@ void __mark_inode_dirty(struct inode *inode, int flags)
 	if ((inode->i_state & flags) == flags)
 		return;
 
-	if (unlikely(block_dump))
+	if (unlikely(block_dump > 1))
 		block_dump___mark_inode_dirty(inode);
 
 	spin_lock(&inode->i_lock);
@@ -787,8 +787,6 @@ void __mark_inode_dirty(struct inode *inode, int flags)
 			bool wakeup_bdi = false;
 			bdi = inode_to_bdi(inode);
 
-			spin_unlock(&inode->i_lock);
-			spin_lock(&bdi->wb.list_lock);
 			if (bdi_cap_writeback_dirty(bdi)) {
 				WARN(!test_bit(BDI_registered, &bdi->state),
 				     "bdi-%s not registered\n", bdi->name);
@@ -797,6 +795,8 @@ void __mark_inode_dirty(struct inode *inode, int flags)
 					wakeup_bdi = true;
 			}
 
+			spin_unlock(&inode->i_lock);
+			spin_lock(&bdi->wb.list_lock);
 			inode->dirtied_when = jiffies;
 			list_move(&inode->i_wb_list, &bdi->wb.b_dirty);
 			spin_unlock(&bdi->wb.list_lock);

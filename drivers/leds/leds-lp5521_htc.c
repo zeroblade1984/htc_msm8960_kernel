@@ -583,6 +583,8 @@ static ssize_t lp5521_led_off_timer_store(struct device *dev,
 		return -EINVAL;
 	if (sec < 0 || sec > 255)
 		return -EINVAL;
+	if (min == 0 && sec ==0)
+		return count;
 
 	led_cdev = (struct led_classdev *)dev_get_drvdata(dev);
 	ldata = container_of(led_cdev, struct lp5521_led, cdev);
@@ -735,7 +737,7 @@ static int lp5521_led_probe(struct i2c_client *client
 	}
 	}
 	private_lp5521_client = client;
-	g_led_work_queue = create_singlethread_workqueue("led");
+	g_led_work_queue = create_workqueue("led");
 	if (!g_led_work_queue)
 		goto err_create_work_queue;
 

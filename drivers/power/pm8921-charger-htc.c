@@ -2530,11 +2530,6 @@ int adjust_chg_vin_min(struct pm8921_chg_chip *chip,
 		return rc;
 	}
 
-	if (reverse_boost_fix_ongoing) {
-		pr_info("%s: Under excuting reverse boost fix. Skip.\n", __func__);
-		return rc;
-	}
-
 	vbat_mv = get_prop_battery_uvolts(chip)/1000;
 	target_vin_min = ori_vin_min = pm_chg_vinmin_get(chip);
 
@@ -2680,7 +2675,7 @@ int pm8921_set_pwrsrc_and_charger_enable(enum htc_power_source_type src,
 	int rc = 0;
 	static int pre_pwr_src;
 
-	pr_debug("src=%d, chg_enable=%d, pwrsrc_enable=%d, screen_state=%d, "
+	pr_info("src=%d, chg_enable=%d, pwrsrc_enable=%d, screen_state=%d, "
 			"mfg_mode=%d, usb_aicl_max_ma=%d, is_vin_min_detected=%d\n",
 				src, chg_enable, pwrsrc_enable, get_screen_state(),
 				board_mfg_mode(), usb_aicl_max_ma, is_vin_min_detected);
@@ -5539,7 +5534,7 @@ int pm8921_limit_charge_enable(int chg_limit_reason, int chg_limit_timer_sub_mas
 #else
 int pm8921_limit_charge_enable(bool enable)
 {
-	pr_debug("limit_charge=%d\n", enable);
+	pr_info("limit_charge=%d\n", enable);
 	if (!the_chip) {
 		pr_err("called before init\n");
 		return -EINVAL;

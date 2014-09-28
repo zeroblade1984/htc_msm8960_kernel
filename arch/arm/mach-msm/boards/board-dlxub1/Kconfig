@@ -1,5 +1,0 @@
-config MACH_DELUXE_UB1
-        depends on ARCH_APQ8064
-        bool "APQ8064 DELUXE_UB1"
-        help
-          Support for the HTC APQ8064 DELUXE_UB1.

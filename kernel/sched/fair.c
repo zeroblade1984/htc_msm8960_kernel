@@ -1048,28 +1048,13 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 static int
 wakeup_preempt_entity(struct sched_entity *curr, struct sched_entity *se);
 
-static struct sched_entity *
-pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
+static struct sched_entity *pick_next_entity(struct cfs_rq *cfs_rq)
 {
-	struct sched_entity *left = __pick_first_entity(cfs_rq);
-	struct sched_entity *se;
-
-	if (!left || (curr && entity_before(curr, left)))
-		left = curr;
-
-	se = left;
+	struct sched_entity *se = __pick_first_entity(cfs_rq);
+	struct sched_entity *left = se;
 
 	if (cfs_rq->skip == se) {
-		struct sched_entity *second;
-
-		if (se == curr) {
-			second = __pick_first_entity(cfs_rq);
-		} else {
-			second = __pick_next_entity(se);
-			if (!second || (curr && entity_before(curr, second)))
-				second = curr;
-		}
-
+		struct sched_entity *second = __pick_next_entity(se);
 		if (second && wakeup_preempt_entity(second, left) < 1)
 			se = second;
 	}
@@ -1085,7 +1070,7 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	return se;
 }
 
-static bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq);
+static void check_cfs_rq_runtime(struct cfs_rq *cfs_rq);
 
 static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 {
@@ -1610,19 +1595,18 @@ static void check_enqueue_throttle(struct cfs_rq *cfs_rq)
 		throttle_cfs_rq(cfs_rq);
 }
 
-static bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+static void check_cfs_rq_runtime(struct cfs_rq *cfs_rq)
 {
 	if (!cfs_bandwidth_used())
-		return false;
+		return;
 
 	if (likely(!cfs_rq->runtime_enabled || cfs_rq->runtime_remaining > 0))
-		return false;
+		return;
 
 	if (cfs_rq_throttled(cfs_rq))
-		return true;
+		return;
 
 	throttle_cfs_rq(cfs_rq);
-	return true;
 }
 
 static inline u64 default_cfs_period(void);
@@ -1721,7 +1705,7 @@ static void unthrottle_offline_cfs_rqs(struct rq *rq)
 #else 
 static __always_inline
 void account_cfs_rq_runtime(struct cfs_rq *cfs_rq, unsigned long delta_exec) {}
-static bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq) { return false; }
+static void check_cfs_rq_runtime(struct cfs_rq *cfs_rq) {}
 static void check_enqueue_throttle(struct cfs_rq *cfs_rq) {}
 static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq) {}
 
@@ -2380,18 +2364,11 @@ static struct task_struct *pick_next_task_fair(struct rq *rq)
 	struct cfs_rq *cfs_rq = &rq->cfs;
 	struct sched_entity *se;
 
-#ifdef CONFIG_FAIR_GROUP_SCHED
 	if (!cfs_rq->nr_running)
 		return NULL;
 
-	cfs_rq = &rq->cfs;
-#endif
-
-	if (!cfs_rq->h_nr_running)
-		return NULL;
-
 	do {
-		se = pick_next_entity(cfs_rq, NULL);
+		se = pick_next_entity(cfs_rq);
 		set_next_entity(cfs_rq, se);
 		cfs_rq = group_cfs_rq(se);
 	} while (cfs_rq);
@@ -2900,17 +2877,15 @@ unsigned long __weak arch_scale_smt_power(struct sched_domain *sd, int cpu)
 unsigned long scale_rt_power(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
-	u64 total, available, age_stamp, avg;
+	u64 total, available;
 
-	age_stamp = ACCESS_ONCE(rq->age_stamp);
-	avg = ACCESS_ONCE(rq->rt_avg);
+	total = sched_avg_period() + (rq->clock - rq->age_stamp);
 
-	total = sched_avg_period() + (rq->clock - age_stamp);
-
-	if (unlikely(total < avg)) {	
+	if (unlikely(total < rq->rt_avg)) {
+		
 		available = 0;
 	} else {
-		available = total - avg;
+		available = total - rq->rt_avg;
 	}
 
 	if (unlikely((s64)total < SCHED_POWER_SCALE))
@@ -3336,10 +3311,10 @@ find_busiest_queue(struct sched_domain *sd, struct sched_group *group,
 		   const struct cpumask *cpus)
 {
 	struct rq *busiest = NULL, *rq;
-	unsigned long busiest_load = 0, busiest_power = SCHED_POWER_SCALE;
+	unsigned long max_load = 0;
 	int i;
 
-	for_each_cpu_and(i, sched_group_cpus(group), cpus) {
+	for_each_cpu(i, sched_group_cpus(group)) {
 		unsigned long power = power_of(i);
 		unsigned long capacity = DIV_ROUND_CLOSEST(power,
 							   SCHED_POWER_SCALE);
@@ -3348,15 +3323,19 @@ find_busiest_queue(struct sched_domain *sd, struct sched_group *group,
 		if (!capacity)
 			capacity = fix_small_capacity(sd, group);
 
+		if (!cpumask_test_cpu(i, cpus))
+			continue;
+
 		rq = cpu_rq(i);
 		wl = weighted_cpuload(i);
 
 		if (capacity && rq->nr_running == 1 && wl > imbalance)
 			continue;
 
-		if (wl * busiest_power > busiest_load * power) {
-			busiest_load = wl;
-			busiest_power = power; 
+		wl = (wl * SCHED_POWER_SCALE) / power;
+
+		if (wl > max_load) {
+			max_load = wl;
 			busiest = rq;
 		}
 	}
@@ -3564,7 +3543,7 @@ void idle_balance(int this_cpu, struct rq *this_rq)
 
 	raw_spin_lock(&this_rq->lock);
 
-	if (!pulled_task || time_after(jiffies, this_rq->next_balance)) {
+	if (pulled_task || time_after(jiffies, this_rq->next_balance)) {
 		this_rq->next_balance = next_balance;
 	}
 }

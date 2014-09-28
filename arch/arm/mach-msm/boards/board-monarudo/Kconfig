@@ -1,5 +1,0 @@
-config MACH_MONARUDO
-	depends on ARCH_APQ8064
-	bool "MONARUDO"
-	help
-	  Support for the HTC Droid DNA

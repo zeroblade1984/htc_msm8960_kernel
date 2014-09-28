@@ -128,7 +128,7 @@ struct gen_pool *gen_pool_create(int min_alloc_order, int nid)
 }
 EXPORT_SYMBOL(gen_pool_create);
 
-int gen_pool_add_virt(struct gen_pool *pool, u64 virt, phys_addr_t phys,
+int gen_pool_add_virt(struct gen_pool *pool, unsigned long virt, phys_addr_t phys,
 		 size_t size, int nid)
 {
 	struct gen_pool_chunk *chunk;
@@ -158,7 +158,7 @@ int gen_pool_add_virt(struct gen_pool *pool, u64 virt, phys_addr_t phys,
 }
 EXPORT_SYMBOL(gen_pool_add_virt);
 
-phys_addr_t gen_pool_virt_to_phys(struct gen_pool *pool, u64 addr)
+phys_addr_t gen_pool_virt_to_phys(struct gen_pool *pool, unsigned long addr)
 {
 	struct gen_pool_chunk *chunk;
 	phys_addr_t paddr = -1;
@@ -204,11 +204,11 @@ void gen_pool_destroy(struct gen_pool *pool)
 }
 EXPORT_SYMBOL(gen_pool_destroy);
 
-u64 gen_pool_alloc_aligned(struct gen_pool *pool, size_t size,
+unsigned long gen_pool_alloc_aligned(struct gen_pool *pool, size_t size,
 				     unsigned alignment_order)
 {
 	struct gen_pool_chunk *chunk;
-	u64 addr = 0, align_mask = 0;
+	unsigned long addr = 0, align_mask = 0;
 	int order = pool->min_alloc_order;
 	int nbits, start_bit = 0, remain;
 
@@ -245,7 +245,7 @@ retry:
 			goto retry;
 		}
 
-		addr = chunk->start_addr + ((u64)start_bit << order);
+		addr = chunk->start_addr + ((unsigned long)start_bit << order);
 		size = nbits << pool->min_alloc_order;
 		atomic_sub(size, &chunk->avail);
 		break;
@@ -255,7 +255,7 @@ retry:
 }
 EXPORT_SYMBOL(gen_pool_alloc_aligned);
 
-void gen_pool_free(struct gen_pool *pool, u64 addr, size_t size)
+void gen_pool_free(struct gen_pool *pool, unsigned long addr, size_t size)
 {
 	struct gen_pool_chunk *chunk;
 	int order = pool->min_alloc_order;

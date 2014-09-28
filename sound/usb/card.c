@@ -672,7 +672,7 @@ static int __init snd_usb_audio_init(void)
 		return -EINVAL;
 	}
 
-	usbaudiosdev = kzalloc(sizeof(*usbaudiosdev), GFP_KERNEL);
+	usbaudiosdev = kzalloc(sizeof(usbaudiosdev), GFP_KERNEL);
 	usbaudiosdev->name = "usb_audio_class";
 
 	err = switch_dev_register(usbaudiosdev);

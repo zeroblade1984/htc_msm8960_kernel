@@ -1,6 +1,0 @@
-config MACH_HTC
-	bool
-
-menu "HTC Board Selection"
-source "arch/arm/mach-msm/boards/Kconfig.board"
-endmenu

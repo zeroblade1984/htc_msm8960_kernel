@@ -26,7 +26,7 @@
 
 
 struct delayed_work smb_state_check_task;
-#define SMB_STATE_UPDATE_PERIOD_SEC			300
+#define SMB_STATE_UPDATE_PERIOD_SEC			60
 
 struct delayed_work smb_delay_phase2_check_task;
 #define SMB_DELAY_PHASE2_PERIOD_SEC			5
@@ -44,12 +44,15 @@ static int screen_state = 1;
 #define XD	3
 #define PVT	0x80
 
+const int SMB349_DC_INPUT_LIMIT[] = {500, 900,1000,1100,1200,1300,1500,1600,1700,1800,2000,2200,2400,2500,3000,3500, -1};
+
 #define SMB349_THERMAL_THRES_VOL		4300
 static int smb_state_pre =  STATE_HI_V_SCRN_OFF;
 static int smb_state_curr  =  STATE_HI_V_SCRN_OFF;
 
 static int pwrsrc_disabled; 
 static int batt_chg_disabled; 
+static int hsml_target_ma;
 
 struct delayed_work		aicl_check_work;
 #define AICL_CHECK_PERIOD_STAGE1_1S		1
@@ -116,19 +119,12 @@ static int dc_input_max;
 extern enum htc_power_source_type pwr_src;
 extern int pm8921_bms_charging_began(void);
 
-#ifdef SMB_DBG_ENABLED
 #define pr_smb_fmt(fmt) "[BATT][smb349] " fmt
 #define pr_smb_err_fmt(fmt) "[BATT][smb349] err:" fmt
 #define pr_smb_info(fmt, ...) \
 	printk(KERN_INFO pr_smb_fmt(fmt), ##__VA_ARGS__)
 #define pr_smb_err(fmt, ...) \
 	printk(KERN_ERR pr_smb_err_fmt(fmt), ##__VA_ARGS__)
-#else
-#define pr_smb_fmt(fmt) { }
-#define pr_smb_err_fmt(fmt) { }
-#define pr_smb_info(fmt, ...) { }
-#define pr_smb_err(fmt, ...) { }
-#endif
 
 #define OutputFormatString 		pr_smb_info
 
@@ -362,6 +358,71 @@ static int get_prechg_curr_def(int targ_ma_curr)
 
 	return ret;
 }
+
+#if 0
+static int get_dc_input_curr_def(int targ_ma_curr)
+{
+	int ret = 0;
+
+		switch (targ_ma_curr) {
+			case 500:
+				ret = DC_INPUT_500MA;
+				break;
+			case 900:
+				ret = DC_INPUT_900MA;
+				break;
+			case 1000:
+				ret = DC_INPUT_1000MA;
+				break;
+			case 1100:
+				ret = DC_INPUT_1100MA;
+				break;
+			case 1200:
+				ret = DC_INPUT_1200MA;
+				break;
+			case 1300:
+				ret = DC_INPUT_1300MA;
+				break;
+			case 1500:
+				ret = DC_INPUT_1500MA;
+				break;
+			case 1600:
+				ret = DC_INPUT_1600MA;
+				break;
+			case 1700:
+				ret = DC_INPUT_1700MA;
+				break;
+			case 1800:
+				ret = DC_INPUT_1800MA;
+				break;
+			case 2000:
+				ret = DC_INPUT_2000MA;
+				break;
+			case 2200:
+				ret = DC_INPUT_2200MA;
+				break;
+			case 2400:
+				ret = DC_INPUT_2400MA;
+				break;
+			case 2500:
+				ret = DC_INPUT_2500MA;
+				break;
+			case 3000:
+				ret = DC_INPUT_3000MA;
+				break;
+			case 3500:
+				ret = DC_INPUT_3500MA;
+				break;
+			default:
+				pr_smb_err("%s ask for %d define\n", __func__, targ_ma_curr);
+				BUG();
+				break;
+		}
+
+	return ret;
+}
+
+#endif
 
 static int get_fastchg_curr_def(int targ_ma_curr)
 {
@@ -1186,11 +1247,10 @@ int smb349_is_charger_bit_low_active(void)
 	if (temp & I2C_CONTROL_CHARGER_BIT)
 		ret = 1;
 
-	if(ret) {
+	if(ret)
 		pr_smb_info("%s, low active \n", __func__);
-	} else {
+	else
 		pr_smb_info("%s, high active \n", __func__);
-	}
 
 	return ret;
 
@@ -1952,16 +2012,15 @@ int _smb349_set_float_voltage(unsigned int fv)
 
 	if(smb349_is_usbcs_register_mode())
 	{
-		pr_smb_info("sff %s, error due to USBCS = 1\n",	__func__);
+		pr_smb_info("%s, error due to USBCS = 1\n",	__func__);
 		return EIO;
 	}
 
 	ret = smb349_masked_write(FLOAT_VOLTAGE_REG, FLOAT_VOLTAGE_MASK, fv);
-	if(ret) {
+	if(ret)
 		pr_smb_info("%s, write reg(0x%x):0x%x fail, ret=%d\n",	__func__, FLOAT_VOLTAGE_REG, (unsigned int)fv, ret);
-	} else {
+	else
 		pr_smb_info("%s, write reg(0x%x):0x%x success\n", __func__, FLOAT_VOLTAGE_REG, (unsigned int)fv);
-	}
 	return ret;
 }
 
@@ -2960,6 +3019,31 @@ int smb349_is_batt_charge_enable(void)
 EXPORT_SYMBOL(smb349_is_batt_charge_enable);
 
 
+#ifdef CONFIG_DUTY_CYCLE_LIMIT
+int smb349_limit_charge_enable(int chg_limit_reason, int chg_limit_timer_sub_mask, int limit_charge_timer_ma)
+{
+	int ret;
+	int chg_limit_current = LIMIT_PRECHG_CURR;
+
+	pr_smb_info("%s:chg_limit_reason=%d, chg_limit_timer_sub_mask=%d, limit_charge_timer_ma=%d\n",
+		__func__, chg_limit_reason, chg_limit_timer_sub_mask, limit_charge_timer_ma);
+
+	
+	if (limit_charge_timer_ma != 0 && !!(chg_limit_reason & chg_limit_timer_sub_mask))
+		chg_limit_current = limit_charge_timer_ma;
+
+	pr_smb_info("%s:chg_limit_current = %d\n", __func__, chg_limit_current);
+
+	ret = _smb34x_set_prechg_curr(get_prechg_curr_def(chg_limit_current));
+
+	if (chg_limit_reason)
+		ret = _smb349_limit_charge_enable(1);
+	else
+		ret = _smb349_limit_charge_enable(0);
+
+	return 0;
+}
+#else
 int smb349_limit_charge_enable(bool enable)
 {
 	int ret = 0;
@@ -2980,6 +3064,7 @@ int smb349_limit_charge_enable(bool enable)
 	return ret;
 }
 EXPORT_SYMBOL(smb349_limit_charge_enable);
+#endif
 
 
 static void smb_state_check_worker(struct work_struct *w)
@@ -3172,9 +3257,9 @@ static	void aicl_check_worker(struct work_struct *work)
 	
 	smb349_set_max_charging_vol();
 
-	
-	
-	
+
+	if (smb_adapter_type == SMB_ADAPTER_KDDI)
+		smb349_set_AICL_mode(0);
 
 
 	
@@ -3362,9 +3447,14 @@ int smb349_set_pwrsrc_and_charger_enable(enum htc_power_source_type input_src,
 
 	
 
-	
 	if(input_src == HTC_PWR_SOURCE_TYPE_BATT)
+	{
+		
 		smb_batt_charging_disabled &= ~(SMB_BATT_CHG_DISABLED_BIT_EOC);
+
+		
+		hsml_target_ma = 0;
+	}
 
 	smb349_enable_charging_with_reason(chg_enable, SMB_BATT_CHG_DISABLED_BIT_KDRV);
 
@@ -3413,7 +3503,44 @@ static void smb349_late_resume(struct early_suspend *h)
 #endif		
 
 
+int smb349_set_hsml_target_ma(int target_ma)
+{
+	pr_info("%s target_ma: %d\n", __func__, target_ma);
+	hsml_target_ma = target_ma;
 
+	return 0;
+}
+
+EXPORT_SYMBOL(smb349_set_hsml_target_ma);
+
+#if 0
+static int get_proper_dc_input_curr_limit_via_hsml(int current_ma)
+{
+
+	int i = 0;
+	int target_ma = 0;
+
+	if(hsml_target_ma == 0) {
+		return current_ma;
+	}
+
+	for(i=0; SMB349_DC_INPUT_LIMIT[i] > 0; i++) {
+		if(hsml_target_ma < SMB349_DC_INPUT_LIMIT[i])
+			break;
+	}
+
+	if(i == 0)
+		target_ma = SMB349_DC_INPUT_LIMIT[i];
+	else if(SMB349_DC_INPUT_LIMIT[i] < 0)
+		target_ma = SMB349_DC_INPUT_LIMIT[i-1];
+	else
+		target_ma = SMB349_DC_INPUT_LIMIT[i-1];
+
+	pr_info("%s, new target_ma=%dmA\n", __func__, target_ma);
+	return get_dc_input_curr_def(target_ma);
+}
+
+#endif
 
 static int set_disable_status_param(const char *val, struct kernel_param *kp)
 {
@@ -3506,9 +3633,9 @@ static int smb349_probe(struct i2c_client *client,
 					IRQF_TRIGGER_RISING,
 					"chg_stat", NULL);
 
-		if (rc < 0) {
+		if (rc < 0)
 			pr_smb_err("request chg_stat irq failed!\n");
-		} else {
+		else {
 			INIT_WORK(&smb349_state_work, smb349_state_work_func);
 			smb349_state_int = pdata->chg_stat_gpio;
 		}

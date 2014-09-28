@@ -60,14 +60,14 @@
 #include <linux/pid.h>
 #include <linux/nsproxy.h>
 #include <linux/ptrace.h>
-#include <linux/freezer.h>
-#include <linux/bootmem.h>
 
 #include <asm/futex.h>
 
 #include "rtmutex_common.h"
 
 int __read_mostly futex_cmpxchg_enabled;
+
+#define FUTEX_HASHBITS (CONFIG_BASE_SMALL ? 4 : 8)
 
 #define FLAGS_SHARED		0x01
 #define FLAGS_CLOCKRT		0x02
@@ -105,18 +105,16 @@ static const struct futex_q futex_q_init = {
 struct futex_hash_bucket {
 	spinlock_t lock;
 	struct plist_head chain;
-} ____cacheline_aligned_in_smp;
+};
 
-static unsigned long __read_mostly futex_hashsize;
-
-static struct futex_hash_bucket *futex_queues;
+static struct futex_hash_bucket futex_queues[1<<FUTEX_HASHBITS];
 
 static struct futex_hash_bucket *hash_futex(union futex_key *key)
 {
 	u32 hash = jhash2((u32*)&key->both.word,
 			  (sizeof(key->both.word)+sizeof(key->both.ptr))/4,
 			  key->both.offset);
-	return &futex_queues[hash & (futex_hashsize - 1)];
+	return &futex_queues[hash & ((1 << FUTEX_HASHBITS)-1)];
 }
 
 static inline int match_futex(union futex_key *key1, union futex_key *key2)
@@ -423,10 +421,13 @@ lookup_pi_state(u32 uval, struct futex_hash_bucket *hb,
 {
 	struct futex_pi_state *pi_state = NULL;
 	struct futex_q *this, *next;
+	struct plist_head *head;
 	struct task_struct *p;
 	pid_t pid = uval & FUTEX_TID_MASK;
 
-	plist_for_each_entry_safe(this, next, &hb->chain, list) {
+	head = &hb->chain;
+
+	plist_for_each_entry_safe(this, next, head, list) {
 		if (match_futex(&this->key, key)) {
 			pi_state = this->pi_state;
 			if (unlikely(!pi_state))
@@ -663,6 +664,7 @@ futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 {
 	struct futex_hash_bucket *hb;
 	struct futex_q *this, *next;
+	struct plist_head *head;
 	union futex_key key = FUTEX_KEY_INIT;
 	int ret;
 
@@ -675,8 +677,9 @@ futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 
 	hb = hash_futex(&key);
 	spin_lock(&hb->lock);
+	head = &hb->chain;
 
-	plist_for_each_entry_safe(this, next, &hb->chain, list) {
+	plist_for_each_entry_safe(this, next, head, list) {
 		if (match_futex (&this->key, &key)) {
 			if (this->pi_state || this->rt_waiter) {
 				ret = -EINVAL;
@@ -705,6 +708,7 @@ futex_wake_op(u32 __user *uaddr1, unsigned int flags, u32 __user *uaddr2,
 {
 	union futex_key key1 = FUTEX_KEY_INIT, key2 = FUTEX_KEY_INIT;
 	struct futex_hash_bucket *hb1, *hb2;
+	struct plist_head *head;
 	struct futex_q *this, *next;
 	int ret, op_ret;
 
@@ -748,7 +752,9 @@ retry_private:
 		goto retry;
 	}
 
-	plist_for_each_entry_safe(this, next, &hb1->chain, list) {
+	head = &hb1->chain;
+
+	plist_for_each_entry_safe(this, next, head, list) {
 		if (match_futex (&this->key, &key1)) {
 			wake_futex(this);
 			if (++ret >= nr_wake)
@@ -757,8 +763,10 @@ retry_private:
 	}
 
 	if (op_ret > 0) {
+		head = &hb2->chain;
+
 		op_ret = 0;
-		plist_for_each_entry_safe(this, next, &hb2->chain, list) {
+		plist_for_each_entry_safe(this, next, head, list) {
 			if (match_futex (&this->key, &key2)) {
 				wake_futex(this);
 				if (++op_ret >= nr_wake2)
@@ -847,6 +855,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
 	int drop_count = 0, task_count = 0, ret;
 	struct futex_pi_state *pi_state = NULL;
 	struct futex_hash_bucket *hb1, *hb2;
+	struct plist_head *head1;
 	struct futex_q *this, *next;
 	u32 curval2;
 
@@ -939,7 +948,8 @@ retry_private:
 		}
 	}
 
-	plist_for_each_entry_safe(this, next, &hb1->chain, list) {
+	head1 = &hb1->chain;
+	plist_for_each_entry_safe(this, next, head1, list) {
 		if (task_count - nr_wake >= nr_requeue)
 			break;
 
@@ -1015,7 +1025,7 @@ static inline struct futex_hash_bucket *queue_lock(struct futex_q *q)
 }
 
 static inline void
-queue_unlock(struct futex_hash_bucket *hb)
+queue_unlock(struct futex_q *q, struct futex_hash_bucket *hb)
 	__releases(&hb->lock)
 {
 	spin_unlock(&hb->lock);
@@ -1184,7 +1194,7 @@ static void futex_wait_queue_me(struct futex_hash_bucket *hb, struct futex_q *q,
 
 	if (likely(!plist_node_empty(&q->list))) {
 		if (!timeout || timeout->task)
-			freezable_schedule();
+			schedule();
 	}
 	__set_current_state(TASK_RUNNING);
 }
@@ -1206,7 +1216,7 @@ retry_private:
 	ret = get_futex_value_locked(&uval, uaddr);
 
 	if (ret) {
-		queue_unlock(*hb);
+		queue_unlock(q, *hb);
 
 		ret = get_user(uval, uaddr);
 		if (ret)
@@ -1220,7 +1230,7 @@ retry_private:
 	}
 
 	if (uval != val) {
-		queue_unlock(*hb);
+		queue_unlock(q, *hb);
 		ret = -EWOULDBLOCK;
 	}
 
@@ -1350,7 +1360,7 @@ retry_private:
 		case -EFAULT:
 			goto uaddr_faulted;
 		case -EAGAIN:
-			queue_unlock(hb);
+			queue_unlock(&q, hb);
 			put_futex_key(&q.key);
 			cond_resched();
 			goto retry;
@@ -1384,7 +1394,7 @@ retry_private:
 	goto out_put_key;
 
 out_unlock_put_key:
-	queue_unlock(hb);
+	queue_unlock(&q, hb);
 
 out_put_key:
 	put_futex_key(&q.key);
@@ -1394,7 +1404,7 @@ out:
 	return ret != -EINTR ? ret : -ERESTARTNOINTR;
 
 uaddr_faulted:
-	queue_unlock(hb);
+	queue_unlock(&q, hb);
 
 	ret = fault_in_user_writeable(uaddr);
 	if (ret)
@@ -1411,6 +1421,7 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
 {
 	struct futex_hash_bucket *hb;
 	struct futex_q *this, *next;
+	struct plist_head *head;
 	union futex_key key = FUTEX_KEY_INIT;
 	u32 uval, vpid = task_pid_vnr(current);
 	int ret;
@@ -1434,7 +1445,9 @@ retry:
 	if (unlikely(uval == vpid))
 		goto out_unlock;
 
-	plist_for_each_entry_safe(this, next, &hb->chain, list) {
+	head = &hb->chain;
+
+	plist_for_each_entry_safe(this, next, head, list) {
 		if (!match_futex (&this->key, &key))
 			continue;
 		ret = wake_futex_pi(uaddr, uval, this);
@@ -1806,23 +1819,12 @@ SYSCALL_DEFINE6(futex, u32 __user *, uaddr, int, op, u32, val,
 static int __init futex_init(void)
 {
 	u32 curval;
-	unsigned long i;
-
-#if CONFIG_BASE_SMALL
-	futex_hashsize = 16;
-#else
-	futex_hashsize = roundup_pow_of_two(256 * num_possible_cpus());
-#endif
-
-	futex_queues = alloc_large_system_hash("futex", sizeof(*futex_queues),
-					       futex_hashsize, 0,
-					       futex_hashsize < 256 ? HASH_SMALL : 0,
-					       NULL, NULL, futex_hashsize);
+	int i;
 
 	if (cmpxchg_futex_value_locked(&curval, NULL, 0, 0) == -EFAULT)
 		futex_cmpxchg_enabled = 1;
 
-	for (i = 0; i < futex_hashsize; i++) {
+	for (i = 0; i < ARRAY_SIZE(futex_queues); i++) {
 		plist_head_init(&futex_queues[i].chain);
 		spin_lock_init(&futex_queues[i].lock);
 	}

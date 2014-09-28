@@ -38,7 +38,6 @@
 #include "kgsl_device.h"
 #include "kgsl_trace.h"
 #include "kgsl_sync.h"
-#include "kgsl_htc.h"
 #include "adreno.h"
 #include "kgsl_htc.h"
 
@@ -63,10 +62,10 @@ unsigned int kgsl_get_alloc_size(int detailed)
 	int i = 0;
 
 	ret = kgsl_driver.stats.page_alloc;
-//	printk("kgsl: kgsl_driver.stats.page_alloc = %u\n", kgsl_driver.stats.page_alloc);
-//	printk("kgsl: kgsl_driver.stats.page_alloc_kernel = %u\n", kgsl_driver.stats.page_alloc_kernel);
-//	printk("kgsl: kgsl_driver.stats.pre_alloc = %u\n", kgsl_driver.stats.pre_alloc);
-//	printk("kgsl: kgsl_driver.stats.pre_alloc_kernel = %u\n", kgsl_driver.stats.pre_alloc_kernel);
+	printk("kgsl: kgsl_driver.stats.page_alloc = %u\n", kgsl_driver.stats.page_alloc);
+	printk("kgsl: kgsl_driver.stats.page_alloc_kernel = %u\n", kgsl_driver.stats.page_alloc_kernel);
+	printk("kgsl: kgsl_driver.stats.pre_alloc = %u\n", kgsl_driver.stats.pre_alloc);
+	printk("kgsl: kgsl_driver.stats.pre_alloc_kernel = %u\n", kgsl_driver.stats.pre_alloc_kernel);
 
 	if (!detailed)
 		return ret;
@@ -76,16 +75,16 @@ unsigned int kgsl_get_alloc_size(int detailed)
 	list_for_each_entry(private, &kgsl_driver.process_list, list) {
 		if (!private)
 			continue;
-//		printk("kgsl: below is going to list all memory info of pid:%d \n", private->pid);
+		printk("kgsl: below is going to list all memory info of pid:%d \n", private->pid);
 		for (i = 0; i < KGSL_MEM_ENTRY_MAX; i++) {
 			switch (i) {
 			case KGSL_MEM_ENTRY_PAGE_ALLOC:
 				if (private != NULL && private->stats[KGSL_MEM_ENTRY_PAGE_ALLOC].cur != 0)
-//					printk("kgsl: page alloc %d\n", private->stats[KGSL_MEM_ENTRY_PAGE_ALLOC].cur);
+					printk("kgsl: page alloc %d\n", private->stats[KGSL_MEM_ENTRY_PAGE_ALLOC].cur);
 				break;
 			case KGSL_MEM_ENTRY_PRE_ALLOC:
 				if (private != NULL && private->stats[KGSL_MEM_ENTRY_PRE_ALLOC].cur != 0)
-//					printk("kgsl: pre alloc %d\n", private->stats[KGSL_MEM_ENTRY_PRE_ALLOC].cur);
+					printk("kgsl: pre alloc %d\n", private->stats[KGSL_MEM_ENTRY_PRE_ALLOC].cur);
 				break;
 			}
 		}
@@ -1274,12 +1273,18 @@ static long kgsl_ioctl_rb_issueibcmds(struct kgsl_device_private *dev_priv,
 			"Using IB list mode for ib submission, numibs: %d\n",
 			param->numibs);
 		if (!param->numibs) {
+			KGSL_DRV_ERR(dev_priv->device,
+				"Invalid numibs as parameter: %d\n",
+				 param->numibs);
 			result = -EINVAL;
 			goto done;
 		}
 
 
 		if (param->numibs > 10000) {
+			KGSL_DRV_ERR(dev_priv->device,
+				"Too many IBs submitted. count: %d max 10000\n",
+				param->numibs);
 			result = -EINVAL;
 			goto done;
 		}
@@ -2660,7 +2665,7 @@ err_put:
 static inline bool
 mmap_range_valid(unsigned long addr, unsigned long len)
 {
-	return ((ULONG_MAX - addr) > len) && ((addr + len) < TASK_SIZE);
+	return (addr + len) > addr && (addr + len) < TASK_SIZE;
 }
 
 static unsigned long

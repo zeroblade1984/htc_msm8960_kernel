@@ -68,22 +68,6 @@ enum {
 			pr_info(x); \
 } while (0)
 
-static void
-dbg_log_event(struct usbnet *dev, char *event)
-{
-	unsigned long flags;
-	unsigned long long t;
-	unsigned long nanosec;
-	write_lock_irqsave(&dev->dbg_lock, flags);
-	t = cpu_clock(smp_processor_id());
-	nanosec = do_div(t, 1000000000)/1000;
-	scnprintf(dev->dbgbuf[dev->dbg_idx], DBG_MSG_LEN, "%5lu.%06lu:%s",
-			(unsigned long)t, nanosec, event);
-	dev->dbg_idx++;
-	dev->dbg_idx = dev->dbg_idx % DBG_MAX_MSG;
-	write_unlock_irqrestore(&dev->dbg_lock, flags);
-}
-
 static ssize_t dbg_mask_store(struct device *d,
 		struct device_attribute *attr,
 		const char *buf, size_t n)
@@ -380,11 +364,6 @@ static struct sk_buff *rmnet_usb_tx_fixup(struct usbnet *dev,
 		struct sk_buff *skb, gfp_t flags)
 {
 	struct QMI_QOS_HDR_S	*qmih;
-	struct  mux_hdr *hdr;
-	unsigned int len_before = skb->len;
-	unsigned int len_after;
-	char event[128];
-	bool muxing = false;
 
 	if (test_bit(RMNET_MODE_QOS, &dev->data[0])) {
 		if (test_bit(RMNET_MODE_ALIGNED_QOS, &dev->data[0])) {
@@ -399,27 +378,14 @@ static struct sk_buff *rmnet_usb_tx_fixup(struct usbnet *dev,
 		qmih->flow_id = skb->mark;
 	 }
 
-	if (dev->data[4]) {
-		muxing = true;
+	if (dev->data[4])
 		skb = rmnet_usb_data_mux(skb, dev->data[3]);
-	}
 
 	if (skb)
 		DBG1("[%s] Tx packet #%lu len=%d mark=0x%x\n",
 			dev->net->name, dev->net->stats.tx_packets,
 			skb->len, skb->mark);
 
-	if (!muxing)
-		goto out;
-
-	hdr = (struct mux_hdr *)skb->data;
-	len_after = skb->len;
-	snprintf(event, 128,
-		"len1=%d, len2=%d, mux_id=%d, pad_info=%d, pkt_len_w_pad=%d",
-			len_before, len_after, hdr->mux_id,
-			hdr->padding_info , hdr->pkt_len_w_padding);
-	dbg_log_event(dev, event);
-out:
 	return skb;
 }
 
